@@ -8048,7 +8048,7 @@ body.wr7-navon #wr7-nav { display: flex; }
   background: none; border: none; border-radius: 12px; cursor: pointer; position: relative;
   color: var(--navy); font-family: var(--font-label); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; padding: 4px 2px; }
 .wr7-navbtn svg { width: 23px; height: 23px; display: block; }
-.wr7-navbtn.active { color: var(--gold-deep); }
+.wr7-navbtn.active { color: var(--navy); background: rgba(223,177,54,.30); box-shadow: inset 0 -3px 0 var(--gold); font-weight: 700; }
 .wr7-navbtn:active { background: rgba(201,162,39,.12); }
 .wr7-badge { position: absolute; top: 2px; left: calc(50% + 2px); min-width: 19px; height: 19px; border-radius: 999px;
   background: var(--gold); color: #1b2a6b; font-family: var(--font-body); font-weight: 700; font-size: 11px; line-height: 19px;
@@ -8057,7 +8057,7 @@ body.wr7-navon #wr7-nav { display: flex; }
 
 /* Gate + profile sheets reuse .wr-sheet; additions below */
 .wr7-guestline { font-size: 13.5px; color: #46506e; text-align: center; margin: 2px 0 0; line-height: 1.5; }
-.wr7-orline { display: flex; align-items: center; gap: 10px; margin: 16px 0 4px; color: #8a93ad; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-family: var(--font-label); }
+.wr7-orline { display: flex; align-items: center; gap: 10px; margin: 16px 0 4px; color: #5a6480; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-family: var(--font-label); }
 .wr7-orline::before, .wr7-orline::after { content: ""; flex: 1; height: 1px; background: rgba(27,42,107,.14); }
 
 /* Profile photo */
@@ -8066,7 +8066,7 @@ body.wr7-navon #wr7-nav { display: flex; }
   border: 3px solid var(--gold); background: linear-gradient(135deg, #fdf6dd, #f3e3a1);
   display: flex; align-items: center; justify-content: center; }
 .wr-profile-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.wr-profile-photo .wr-profile-initial { font-family: var(--font-display); font-size: 34px; color: var(--gold-deep); line-height: 1; }
+.wr-profile-photo .wr-profile-initial { font-family: var(--font-display), "Bebas Neue", sans-serif; font-size: 34px; color: #8a6d1f; line-height: 1; }
 .wr-profile-photoname { font-family: var(--font-label); font-size: 19px; color: var(--navy); line-height: 1.25; }
 .wr-profile-photosub { font-size: 13px; color: #5a6480; margin-top: 2px; }
 .wr-profile-msg { font-size: 13.5px; color: #3f6d1f; min-height: 0; margin: 4px 0 0; }
@@ -8086,7 +8086,7 @@ body.wr7-navon #wr7-nav { display: flex; }
   background: #e8eaf2; cursor: pointer; padding: 0; }
 .wr7-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%;
   background: #fff; box-shadow: 0 1px 4px rgba(27,42,107,.3); transition: left .18s ease; }
-.wr7-switch[aria-checked="true"] { background: var(--gold); border-color: var(--gold-deep); }
+.wr7-switch[aria-checked="true"] { background: var(--gold); border-color: #a87f16; }
 .wr7-switch[aria-checked="true"]::after { left: 24px; }
 
 /* Your museum blocks */
@@ -8099,9 +8099,9 @@ body.wr7-navon #wr7-nav { display: flex; }
 .wr7-stop { display: flex; align-items: center; gap: 10px; font-size: 14px; }
 .wr7-stopdot { width: 26px; height: 26px; border-radius: 50%; flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
   border: 1.5px dashed rgba(27,42,107,.35); color: transparent; font-size: 13px; background: #fff; }
-.wr7-stop.got .wr7-stopdot { border: 1.5px solid var(--gold-deep); background: radial-gradient(circle at 35% 30%, #f7e08a, var(--gold)); color: #1b2a6b; font-weight: 700; }
+.wr7-stop.got .wr7-stopdot { border: 1.5px solid #a87f16; background: radial-gradient(circle at 35% 30%, #f7e08a, var(--gold)); color: #1b2a6b; font-weight: 700; }
 .wr7-stop .wr7-stopstate { margin-left: auto; font-size: 12.5px; color: #5a6480; }
-.wr7-stop.got .wr7-stopstate { color: var(--gold-deep); font-weight: 600; }
+.wr7-stop.got .wr7-stopstate { color: #8a6d1f; font-weight: 600; }
 .wr7-gb { background: #fdfaf0; border: 1px solid rgba(201,162,39,.4); border-radius: 12px; padding: 10px 12px; margin-top: 6px; }
 .wr7-gb .wr7-gbname { font-weight: 700; font-size: 14.5px; }
 .wr7-gb .wr7-gbchap { font-size: 13px; color: #5a6480; }
@@ -8125,7 +8125,7 @@ body.wr7-navon #wr7-nav { display: flex; }
 .wr7-notet { font-family: var(--font-label); font-size: 17.5px; color: var(--navy); line-height: 1.3; }
 .wr7-noteb { font-size: 14px; color: var(--ink); line-height: 1.55; margin-top: 3px; }
 .wr7-noted { font-size: 12.5px; color: #5a6480; margin-top: 5px; }
-.wr7-notego { font-size: 12.5px; color: var(--gold-deep); font-weight: 600; margin-top: 4px; }
+.wr7-notego { font-size: 12.5px; color: var(--navy); font-weight: 600; margin-top: 4px; text-decoration: underline; text-underline-offset: 2px; }
 
 /* Series credit footer inside the profile sheet */
 .wr-profile-credit { margin: 22px 0 2px; padding-top: 14px; border-top: 1px solid rgba(27,42,107,.12);
@@ -8135,6 +8135,89 @@ body.wr7-navon #wr7-nav { display: flex; }
   .wr7-navbtn { font-size: 10px; }
   .wr-profile-photo { width: 68px; height: 68px; }
 }
+
+/* ===== Pass 7 sign-in redesign (added Nov 18, 2026): gate layout with Google
+   sign-in, cushion inside every pop-up sheet, readable highlights, a standard
+   exit icon on every sheet, and tabbed My Profile. All selectors below are
+   scoped to the pass-7 sheets (gate / profile / updates), the passport panel's
+   own close, or the new elements this block creates. Nothing else restyled. */
+
+/* -- border-box everywhere inside the pass-7 sheets (fixes right-edge overflow) -- */
+#wr-reg-gate, #wr-profile, #wr7-notes { box-sizing: border-box; }
+#wr-reg-gate *, #wr-profile *, #wr7-notes *,
+#wr-reg-gate *::before, #wr-profile *::before, #wr7-notes *::before,
+#wr-reg-gate *::after, #wr-profile *::after, #wr7-notes *::after { box-sizing: border-box; }
+
+/* -- sheet chrome: the cushion. Head leaves room for the exit icon; body scrolls inside the sheet -- */
+#wr-reg-gate .wr-sheet-head, #wr-profile .wr-sheet-head, #wr7-notes .wr-sheet-head {
+  flex: none; padding: 22px 76px 14px 24px; border-bottom: 1px solid rgba(27,42,107,.12); }
+#wr-reg-gate .wr-sheet-t, #wr-profile .wr-sheet-t, #wr7-notes .wr-sheet-t {
+  font-family: var(--font-label); font-size: 31px; letter-spacing: .03em; color: var(--navy); line-height: 1.1; }
+#wr-reg-gate .wr-sheet-s, #wr-profile .wr-sheet-s, #wr7-notes .wr-sheet-s {
+  font-size: 14px; color: #46506e; line-height: 1.5; margin-top: 3px; }
+#wr-reg-gate .wr-sheet-body, #wr-profile .wr-sheet-body, #wr7-notes .wr-sheet-body {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 22px 24px calc(28px + env(safe-area-inset-bottom, 0px)); }
+
+/* -- the gate is a centred card, about 430px wide -- */
+#wr-reg-gate { width: min(430px, 100vw); right: max(0px, calc((100vw - 430px) / 2)); }
+
+/* -- form controls inside the gate and profile: labels above fields, 48px+ targets -- */
+#wr-reg-gate .wr-pp-reg-f, #wr-profile .wr-pp-reg-f { margin: 0 0 14px; }
+#wr-reg-gate .wr-pp-reg-f label, #wr-profile .wr-pp-reg-f label {
+  display: block; font-family: var(--font-label); font-size: 13px; letter-spacing: .14em;
+  text-transform: uppercase; color: #8a6d1f; margin: 0 0 5px; }
+#wr-reg-gate .wr-pp-reg-in, #wr-profile .wr-pp-reg-in {
+  width: 100%; min-height: 48px; padding: 11px 12px; font: 400 15.5px var(--font-body);
+  color: var(--ink); background: #fff; border: 1px solid #cfc39f; border-radius: 10px; }
+#wr-reg-gate .wr-pp-reg-btn, #wr-profile .wr-pp-reg-btn {
+  min-height: 52px; display: flex; align-items: center; justify-content: center; width: 100%; }
+#wr-reg-gate .wr-pp-reg-msg, #wr-profile .wr-pp-reg-msg {
+  display: none; margin: 10px 0 0; font-size: 14px; line-height: 1.5; color: #2a3a7d; text-align: center; }
+#wr-reg-gate .wr-pp-reg-msg:not(:empty), #wr-profile .wr-pp-reg-msg:not(:empty) { display: block; }
+#wr-reg-gate .wr7-orline { margin: 22px 0 14px; }
+
+/* -- Continue with Google -- */
+.wr-signin-gwrap { margin: 2px 0 0; }
+.wr-signin-google { appearance: none; cursor: pointer; width: 100%; min-height: 52px;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  background: #ffffff; color: var(--navy); border: 1.5px solid rgba(23,38,94,.35); border-radius: 10px;
+  font-family: var(--font-body); font-weight: 600; font-size: 15.5px; padding: 10px 14px; }
+.wr-signin-google svg { width: 21px; height: 21px; flex: 0 0 auto; display: block; }
+.wr-signin-google:active { background: #f2eee0; }
+.wr-signin-gmsg { display: none; margin: 10px 0 0; font-size: 14px; line-height: 1.5; color: #8a3b12; text-align: center; }
+.wr-signin-gmsg.show { display: block; }
+
+/* -- standard exit icon: navy cross on a white circle with a gold ring, 48px, top-right of every sheet -- */
+#wr-reg-gate .wr-sheet-x, #wr-profile .wr-sheet-x, #wr7-notes .wr-sheet-x, #wr-pp .wr-sheet-x {
+  width: 48px; height: 48px; top: 12px; right: 12px; z-index: 5;
+  background: #ffffff; color: var(--navy); border: 2px solid var(--gold);
+  font-size: 24px; font-weight: 700; line-height: 1; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 10px rgba(27,42,107,.22); }
+.wr-signin-close { position: absolute; top: 6px; right: 8px; width: 44px; height: 44px; border-radius: 50%;
+  background: #ffffff; color: var(--navy); border: 2px solid var(--gold); font-size: 22px; font-weight: 700;
+  line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 5;
+  box-shadow: 0 2px 10px rgba(9,17,46,.4); }
+#sectionmenu.wr-signin-menu { padding-top: 54px; }
+
+/* -- profile tabs: segmented bar under the title; navy pill when active -- */
+.wr-signin-tabs { flex: none; display: flex; gap: 6px; padding: 14px 24px 0; }
+.wr-signin-tab { flex: 1 1 0; min-height: 48px; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(23,38,94,.28); background: #efe9d6; color: var(--navy);
+  font-family: var(--font-label); font-size: 16.5px; letter-spacing: .07em; text-transform: uppercase; padding: 8px 4px 6px; }
+.wr-signin-tab.active { background: var(--navy); color: #ffffff; border-color: var(--navy); }
+.wr-signin-panel[hidden] { display: none; }
+
+/* -- tidy cards inside the profile sheet -- */
+.wr-signin-card { background: #ffffff; border: 1px solid rgba(23,38,94,.13); border-radius: 14px; padding: 18px 16px; margin: 0 0 18px; }
+.wr-signin-card > :last-child { margin-bottom: 0; }
+.wr-signin-card .wr7-h { margin-top: 0; }
+#wr-profile .wr7-block { background: #ffffff; border: 1px solid rgba(23,38,94,.13); border-radius: 14px; padding: 16px; margin: 0 0 16px; }
+#wr-profile .wr7-h { margin-top: 4px; }
+
+/* -- updates cards keep their padding inside the sheet width -- */
+.wr7-note { padding: 14px 16px; }
 
 </style>
 <script>
@@ -8366,6 +8449,47 @@ body.wr7-navon #wr7-nav { display: flex; }
     if (!keepScrim) { var sc = $("wr7-scrim"); if (sc) sc.classList.remove("show"); }
   }
 
+  /* ---------- Google sign-in (shared by the gate and the profile) ---------- */
+  var GOOGLE_G = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.66-.22-2.45H12v4.64h6.45a5.52 5.52 0 0 1-2.39 3.64v3h3.87c2.26-2.09 3.57-5.16 3.57-8.83z"/><path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.87-3c-1.07.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.29v3.1A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.27 14.28A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.28V6.62H1.29a12 12 0 0 0 0 10.76l3.98-3.1z"/><path fill="#EA4335" d="M12 4.76c1.76 0 3.35.61 4.6 1.8l3.44-3.44A11.98 11.98 0 0 0 12 0 11.99 11.99 0 0 0 1.29 6.62l3.98 3.1C6.22 6.87 8.87 4.76 12 4.76z"/></svg>';
+  function googleWrap(btnId) {
+    var wrap = el("div", "wr-signin-gwrap");
+    var b = el("button", "wr-signin-google"); b.type = "button"; b.id = btnId;
+    var ic = el("span"); ic.innerHTML = GOOGLE_G; b.appendChild(ic);
+    b.appendChild(el("span", null, "Continue with Google"));
+    wrap.appendChild(b);
+    var m = el("p", "wr-signin-gmsg", "Google sign-in is not turned on yet. Use the email link below.");
+    m.id = btnId + "-msg";
+    wrap.appendChild(m);
+    return wrap;
+  }
+  function onGoogle(btnId) {
+    var btn = $(btnId), msg = $(btnId + "-msg");
+    function fail() { if (msg) msg.classList.add("show"); }
+    if (!sb7) {
+      var tries = btn ? parseInt(btn.getAttribute("data-tries") || "0", 10) : 99;
+      if (btn && tries < 3) {
+        btn.setAttribute("data-tries", String(tries + 1));
+        initSb7();
+        window.setTimeout(function () { onGoogle(btnId); }, 700);
+        return;
+      }
+      fail();
+      return;
+    }
+    try {
+      var p = sb7.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin + window.location.pathname } });
+      if (p && p.then) p.then(function (res) { if (res && res.error) fail(); }, function () { fail(); });
+    } catch (e) { fail(); }
+  }
+  function closeSectionMenu() {
+    var menu = $("sectionmenu");
+    if (menu && menu.classList.contains("open")) {
+      menu.classList.remove("open");
+      document.body.classList.remove("menu-open");
+      var mb = $("btn-menu"); if (mb) mb.setAttribute("aria-expanded", "false");
+    }
+  }
+
   /* ---------- DOM construction ---------- */
   function regField(labelText, inputId, type, ph) {
     var wrap = el("div", "wr-pp-reg-f");
@@ -8418,6 +8542,8 @@ body.wr7-navon #wr7-nav { display: flex; }
     ghead.appendChild(gx);
     gate.appendChild(ghead);
     var gbody = el("div", "wr-sheet-body");
+    gbody.appendChild(googleWrap("wr-signin-google-gate"));
+    var gor0 = el("div", "wr7-orline", "or use your email"); gbody.appendChild(gor0);
     gbody.appendChild(signinForm("wr-reg-gate"));
     var gor = el("div", "wr7-orline", "or save your details here"); gbody.appendChild(gor);
     gbody.appendChild(regField("Your name", "wr-reg-gate-name", "text", "Your full name"));
@@ -8444,8 +8570,23 @@ body.wr7-navon #wr7-nav { display: flex; }
     var px = el("button", "wr-sheet-x", "×"); px.type = "button"; px.id = "wr-profile-x"; px.setAttribute("aria-label", "Close profile");
     phead.appendChild(px);
     prof.appendChild(phead);
+    /* tab bar: Profile / My museum / Settings, directly under the title */
+    var tabs = el("div", "wr-signin-tabs"); tabs.setAttribute("role", "tablist");
+    ["profile", "museum", "settings"].forEach(function (n) {
+      var t = el("button", "wr-signin-tab" + (n === "profile" ? " active" : ""));
+      t.type = "button"; t.id = "wr-signin-tab-" + n; t.setAttribute("role", "tab");
+      t.setAttribute("aria-selected", n === "profile" ? "true" : "false");
+      t.setAttribute("aria-controls", "wr-signin-panel-" + n);
+      t.textContent = n === "profile" ? "Profile" : n === "museum" ? "My museum" : "Settings";
+      t.addEventListener("click", function () { showProfileTab(n); });
+      tabs.appendChild(t);
+    });
+    prof.appendChild(tabs);
     var pb = el("div", "wr-sheet-body");
 
+    /* Profile tab: photo + greeting, details form, sign-in */
+    var panelP = el("div", "wr-signin-panel"); panelP.id = "wr-signin-panel-profile"; panelP.setAttribute("role", "tabpanel");
+    var card1 = el("div", "wr-signin-card");
     var prow = el("div", "wr-profile-photorow");
     var pphoto = el("div", "wr-profile-photo"); pphoto.id = "wr-profile-photo";
     prow.appendChild(pphoto);
@@ -8460,25 +8601,35 @@ body.wr7-navon #wr7-nav { display: flex; }
     fileInp.type = "file"; fileInp.id = "wr-profile-file"; fileInp.accept = "image/*"; fileInp.style.display = "none";
     ptxt.appendChild(fileInp);
     prow.appendChild(ptxt);
-    pb.appendChild(prow);
-    var pmsg = el("p", "wr-profile-msg"); pmsg.id = "wr-profile-photo-msg"; pb.appendChild(pmsg);
-
-    pb.appendChild(regField("Your name", "wr-profile-name", "text", "Your full name"));
-    pb.appendChild(regField("Your chapter", "wr-profile-chapter", "text", "e.g. Beta Mu Sigma"));
-    pb.appendChild(regField("When did you join Sigma Gamma Rho?", "wr-profile-joined", "text", "e.g. Spring 1998"));
-    pb.appendChild(regSelect("Member type", "wr-profile-member", MEMBER_OPTS));
+    card1.appendChild(prow);
+    var pmsg = el("p", "wr-profile-msg"); pmsg.id = "wr-profile-photo-msg"; card1.appendChild(pmsg);
+    panelP.appendChild(card1);
+    var card2 = el("div", "wr-signin-card");
+    card2.appendChild(regField("Your name", "wr-profile-name", "text", "Your full name"));
+    card2.appendChild(regField("Your chapter", "wr-profile-chapter", "text", "e.g. Beta Mu Sigma"));
+    card2.appendChild(regField("When did you join Sigma Gamma Rho?", "wr-profile-joined", "text", "e.g. Spring 1998"));
+    card2.appendChild(regSelect("Member type", "wr-profile-member", MEMBER_OPTS));
     var psave = el("button", "wr-pp-reg-btn", "Save your details"); psave.type = "button"; psave.id = "wr-profile-save";
-    pb.appendChild(psave);
-    var psavemsg = el("p", "wr-pp-reg-msg"); psavemsg.id = "wr-profile-save-msg"; pb.appendChild(psavemsg);
+    card2.appendChild(psave);
+    var psavemsg = el("p", "wr-pp-reg-msg"); psavemsg.id = "wr-profile-save-msg"; card2.appendChild(psavemsg);
+    panelP.appendChild(card2);
+    var card3 = el("div", "wr-signin-card");
+    card3.appendChild(el("div", "wr7-h", "Sign in"));
+    var signinBox = el("div"); signinBox.id = "wr-profile-signin"; card3.appendChild(signinBox);
+    panelP.appendChild(card3);
+    pb.appendChild(panelP);
 
-    pb.appendChild(el("div", "wr7-h", "Your museum"));
-    pb.appendChild(el("p", "wr7-sub", "Your passport, and everything you have put into the museum."));
-    var ym = el("div"); ym.id = "wr-profile-yours"; pb.appendChild(ym);
+    /* My museum tab: the Your museum section, unchanged */
+    var panelM = el("div", "wr-signin-panel"); panelM.id = "wr-signin-panel-museum"; panelM.hidden = true; panelM.setAttribute("role", "tabpanel");
+    panelM.appendChild(el("div", "wr7-h", "Your museum"));
+    panelM.appendChild(el("p", "wr7-sub", "Your passport, and everything you have put into the museum."));
+    var ym = el("div"); ym.id = "wr-profile-yours"; panelM.appendChild(ym);
+    pb.appendChild(panelM);
 
-    pb.appendChild(el("div", "wr7-h", "Sign in"));
-    var signinBox = el("div"); signinBox.id = "wr-profile-signin"; pb.appendChild(signinBox);
-
-    pb.appendChild(el("div", "wr7-h", "Settings"));
+    /* Settings tab: calm motion, passport reset, series credit */
+    var panelS = el("div", "wr-signin-panel"); panelS.id = "wr-signin-panel-settings"; panelS.hidden = true; panelS.setAttribute("role", "tabpanel");
+    panelS.appendChild(el("div", "wr7-h", "Settings"));
+    var cardS = el("div", "wr-signin-card");
     var calmRow = el("div", "wr7-setrow");
     var calmMain = el("div", "wr7-setmain");
     calmMain.appendChild(el("div", "wr7-setname", "Calm motion"));
@@ -8487,7 +8638,7 @@ body.wr7-navon #wr7-nav { display: flex; }
     var calmSw = el("button", "wr7-switch"); calmSw.type = "button"; calmSw.id = "wr-profile-calm";
     calmSw.setAttribute("role", "switch"); calmSw.setAttribute("aria-checked", "false"); calmSw.setAttribute("aria-label", "Calm motion");
     calmRow.appendChild(calmSw);
-    pb.appendChild(calmRow);
+    cardS.appendChild(calmRow);
     var resetRow = el("div", "wr7-setrow");
     var resetMain = el("div", "wr7-setmain");
     resetMain.appendChild(el("div", "wr7-setname", "Passport"));
@@ -8495,10 +8646,11 @@ body.wr7-navon #wr7-nav { display: flex; }
     resetRow.appendChild(resetMain);
     var resetBtn = el("button", "wr-pp-reg-btn ghost", "Reset my passport"); resetBtn.type = "button"; resetBtn.id = "wr-profile-reset";
     resetRow.appendChild(resetBtn);
-    pb.appendChild(resetRow);
-    var resetMsg = el("p", "wr-pp-reg-msg"); resetMsg.id = "wr-profile-reset-msg"; pb.appendChild(resetMsg);
-
-    pb.appendChild(el("div", "wr-profile-credit", CREDIT_LINE));
+    cardS.appendChild(resetRow);
+    var resetMsg = el("p", "wr-pp-reg-msg"); resetMsg.id = "wr-profile-reset-msg"; cardS.appendChild(resetMsg);
+    panelS.appendChild(cardS);
+    panelS.appendChild(el("div", "wr-profile-credit", CREDIT_LINE));
+    pb.appendChild(panelS);
     prof.appendChild(pb);
     document.body.appendChild(prof);
 
@@ -8733,6 +8885,9 @@ body.wr7-navon #wr7-nav { display: flex; }
       });
       box.appendChild(out);
     } else {
+      box.appendChild(googleWrap("wr-signin-google-profile"));
+      var gb = $("wr-signin-google-profile");
+      if (gb) gb.addEventListener("click", function () { onGoogle("wr-signin-google-profile"); });
       box.appendChild(signinForm("wr-profile"));
       var send = $("wr-profile-send");
       if (send) send.addEventListener("click", function () { sendSignInLink("wr-profile-email", "wr-profile-msg", send); });
@@ -9035,10 +9190,24 @@ body.wr7-navon #wr7-nav { display: flex; }
     fetchNotifications();
   }
 
+  /* ---------- profile tabs ---------- */
+  var profileTab = "profile";
+  function showProfileTab(name) {
+    profileTab = name;
+    ["profile", "museum", "settings"].forEach(function (n) {
+      var t = $("wr-signin-tab-" + n), p = $("wr-signin-panel-" + n);
+      if (t) { t.classList.toggle("active", n === name); t.setAttribute("aria-selected", n === name ? "true" : "false"); }
+      if (p) p.hidden = n !== name;
+    });
+    var body = $("wr-profile") ? $("wr-profile").querySelector(".wr-sheet-body") : null;
+    if (body) body.scrollTop = 0;
+  }
+
   /* ---------- openers + navigation ---------- */
   function openProfile() {
     showMine($("wr-profile"));
     profileOpen = true;
+    showProfileTab("profile");
     prefillDetails();
     renderSigninRows();
     renderYourMuseum();
@@ -9116,6 +9285,7 @@ body.wr7-navon #wr7-nav { display: flex; }
     document.addEventListener("click", onEnterIntercept, true);
 
     $("wr-reg-gate-x").addEventListener("click", proceedThroughGate);
+    $("wr-signin-google-gate").addEventListener("click", function () { onGoogle("wr-signin-google-gate"); });
     $("wr-reg-gate-guest").addEventListener("click", proceedThroughGate);
     $("wr-reg-gate-send").addEventListener("click", function () {
       sendSignInLink("wr-reg-gate-email", "wr-reg-gate-msg", $("wr-reg-gate-send"));
@@ -9146,6 +9316,15 @@ body.wr7-navon #wr7-nav { display: flex; }
       if (window.__wrCalmApply) { try { window.__wrCalmApply(); } catch (e) {} }
     });
     $("wr-profile-reset").addEventListener("click", function () { onResetPassport(this); });
+
+    var menuEl = $("sectionmenu");
+    if (menuEl && !$("wr-signin-menu-x")) {
+      menuEl.classList.add("wr-signin-menu");
+      var mx = el("button", "wr-signin-close", "×"); mx.type = "button"; mx.id = "wr-signin-menu-x";
+      mx.setAttribute("aria-label", "Close menu");
+      mx.addEventListener("click", function (e) { if (e) e.stopPropagation(); closeSectionMenu(); });
+      menuEl.insertBefore(mx, menuEl.firstChild);
+    }
 
     hookShareForm();
     var tries = 0;
