@@ -7427,5 +7427,72 @@
   }
   </style>
 
+  <style id="wr-uniformity">
+  /* ===== Uniformity pass (Nov 18, 2026): every button in a group
+     carries the same size and the same layout, and every circle that
+     does the same job carries the same diameter. One layer of size
+     rules over the existing styles — no wording, order, colour, or
+     behaviour changes anywhere. ===== */
+
+  /* --- round control buttons: one diameter, 44px — the reader's
+     close, the photo viewer's close, every sheet's close, the article
+     note's close, and the four walk arrows (the forward arrow used to
+     be a larger 54px circle among 48px ones). The search field's
+     clear button already sits at 44px. The article note's text gets
+     a wider right margin so it stays clear of its larger close
+     circle. --- */
+  #panelclose, #pb-close, .wr-sheet-x, .a-note-x, .padbtn, #pad .fwd { width: 44px; height: 44px; }
+  #articleview .a-note { padding-right: 56px; }
+
+  /* --- markers: one diameter, 40px — the article detail hotspots
+     already sit at 40px, so the scavenger-hunt marks rise to meet
+     them, glyph included. (The passport's seals stay 58px: they are
+     ink stamps, not controls, and their tilt is the stamp look.) --- */
+  .wr-huntmark { width: 40px; height: 40px; font-size: 16px; }
+
+  /* --- the reader's bottom row: Earlier, Listen, and Later share
+     one height (Listen already stood at 48px; its neighbours rise
+     to meet it, centred the same way). --- */
+  #panel .navrow .navbtn {
+    min-height: 48px; display: inline-flex; align-items: center; justify-content: center;
+  }
+
+  /* --- the reader's two call-to-action buttons (Read the article,
+     Take the quiz) share one size: the quiz button takes the article
+     button's padding, so both stand at the same height with the same
+     font and radius they already shared. --- */
+  .quizbtn { padding: 11px 18px 9px; }
+
+  /* --- the room-quiz answer rows share one height: tall enough for
+     the longest answer in the museum to sit on two lines, so no
+     answer is ever clipped — a longer one would simply grow. --- */
+  .wr-quiz .choice { min-height: 68px; }
+
+  /* --- sheet and panel primary buttons: one size — the guest
+     book's sign button, the check-in and share forms' send buttons,
+     the passport's sign-in and save buttons, My Visit's save and
+     link buttons, the reader's Share This Story, the passport's
+     frame and share buttons, and the guest book's share link all
+     stand at one height, in one font size, with one padding and the
+     radius they already shared, labels centred the same way. --- */
+  .wr-gb-sign, .wr2-save, .wr-pp-reg-btn, .wr4-btn, .wr-pp-full, .wr2-share-btn {
+    min-height: 48px; font-size: 17px; padding: 10px 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .wr3-sharelink {
+    min-height: 48px; font-size: 17px; padding: 10px 16px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+
+  /* --- menu rows: the self-guided tour rows take the section rows'
+     height, so every row in the Menu stands at one height (the
+     phone height follows the section rows' phone height). --- */
+  .sm-tour { min-height: 58px; }
+  @media (max-width: 700px) {
+    .sm-tour { min-height: 48px; }
+  }
+  </style>
+
+
 </body>
 </html>
