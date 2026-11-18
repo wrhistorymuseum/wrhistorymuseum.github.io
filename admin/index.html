@@ -408,6 +408,21 @@ audio{width:100%;margin:.4rem 0}
       </div>
 
       <div class="card">
+        <h3>Send an update</h3>
+        <p class="sub">Updates appear in the museum's Updates list, under the bell in the bottom bar. Keep them short and plain.</p>
+        <label for="upd_title">Title</label>
+        <input id="upd_title" type="text" placeholder="e.g. A new story in Syntaktes Hall">
+        <label for="upd_body">Message</label>
+        <textarea id="upd_body" placeholder="One or two plain lines about what is new."></textarea>
+        <label for="upd_target">Takes her to (optional)</label>
+        <select id="upd_target"><option value="">No destination</option></select>
+        <div class="btnrow">
+          <button class="btn" id="updSend" type="button">Send update</button>
+        </div>
+        <div class="msg" id="updMsg" aria-live="polite"></div>
+        <div id="updList" style="margin-top:10px;"></div>
+      </div>
+      <div class="card">
         <h3>Entrance pieces — order &amp; switches</h3>
         <p class="hint">Order and switches are saved here; the welcome words and announcements above reach the museum right away.</p>
         <div id="entrancePieces"><p class="hint">Loading the door's pieces…</p></div>
@@ -798,6 +813,7 @@ $("roomsList").addEventListener("click", async function(ev){
   if(res.error){ appMsg(errText(res.error), "err"); return; }
   item.status = next;
   await logActivity(next==="published" ? "Published room" : "Moved room to draft", item.value.name || item.key);
+  if (next === "published") postNotification(item.value.name || "A room", "This room is now open in the museum.", item.key, "publish");
   renderRooms(); fillAreaSelect();
   appMsg("Saved. " + (item.value.name||"The room") + " is now " + next + ".", "ok");
 });
@@ -985,6 +1001,7 @@ async function saveStory(status){
       if(res.error) throw res.error;
       c.existing.value = c.value; c.existing.status = status;
       await logActivity(status==="published" ? "Published story" : "Saved story as draft", c.headline);
+      if (status === "published") postNotification(c.headline, "This story is now in the museum.", c.itemKey, "publish");
       appMsg(status==="published" ? "Published. The story is live in the museum." : "Saved as a draft.", "ok");
     } else {
       var newKey = "exhibit:" + c.area + "-" + slugify(c.headline);
@@ -1013,6 +1030,7 @@ async function saveStory(status){
         }
       }
       await logActivity(status==="published" ? "Published new story" : "Added story as draft", c.headline);
+      if (status === "published") postNotification(c.headline, "This story is now in the museum.", newKey, "publish");
       appMsg(status==="published" ? "Published. The new story is live in the museum." : "Saved as a draft.", "ok");
     }
     renderStoriesScreen();
@@ -1090,6 +1108,8 @@ function renderEntrance(){
   setVal("ci_label", ciw.label); setVal("ci_dir", ciw.direction);
   renderAnnouncements();
   renderEntrancePieces();
+  fillUpdateTargets();
+  loadNotifications();
 }
 $("welcomeSave").addEventListener("click", async function(){
   var item = contentByKey("entrance:welcome-copy");
@@ -1179,10 +1199,80 @@ async function saveAnnouncement(status){
       setVal("ann_key", newKey);
     }
     await logActivity(status==="published" ? "Published entrance message" : "Saved entrance message as draft", text);
+    if (status === "published") postNotification("Entrance message", "A new message is now showing at the museum entrance.", "", "publish");
     renderAnnouncements();
     appMsg(status==="published" ? "Published. The message shows at the entrance between its dates." : "Saved as a draft.", "ok");
   }catch(e){ appMsg(errText(e), "err"); }
 }
+
+/* ---- Updates (notifications): publish hooks + Send an update ---- */
+async function postNotification(title, body, target, kind){
+  try{
+    await sb.from("notifications").insert({ title: title || "", body: body || "", target: target || "", kind: kind || "note" });
+  }catch(e){ /* failure-silent: the publish itself already succeeded */ }
+}
+function fillUpdateTargets(){
+  var sel = $("upd_target"); if(!sel) return;
+  var cur = sel.value;
+  sel.innerHTML = '<option value="">No destination</option>';
+  allContent.forEach(function(it){
+    if (it.key.indexOf("area:") === 0){
+      var o = document.createElement("option");
+      o.value = it.key;
+      o.textContent = "Room: " + (it.value.name || it.key);
+      sel.appendChild(o);
+    }
+  });
+  allContent.forEach(function(it){
+    if (it.key.indexOf("exhibit:") === 0 && it.status === "published" && it.value && it.value.type === "exhibit"){
+      var o = document.createElement("option");
+      o.value = it.key;
+      o.textContent = "Story: " + storyTitle(it);
+      sel.appendChild(o);
+    }
+  });
+  sel.value = cur;
+}
+async function loadNotifications(){
+  var list = $("updList"); if(!list) return;
+  var res = await sb.from("notifications").select("id, title, body, target, kind, created_at").order("created_at", { ascending:false }).limit(20);
+  if (res.error){ list.innerHTML = '<p class="sub">Updates are not set up yet. The notifications table comes from notifications-setup.sql.</p>'; return; }
+  var rows = res.data || [];
+  if (!rows.length){ list.innerHTML = '<p class="sub">No updates sent yet.</p>'; return; }
+  list.innerHTML = rows.map(function(r){
+    var d = r.created_at ? new Date(r.created_at) : null;
+    var when = d ? d.toLocaleDateString(undefined, { year:"numeric", month:"long", day:"numeric" }) : "";
+    return '<div class="rowline"><div class="grow"><b>' + esc(r.title || "Museum update") + '</b>' +
+      (r.body ? '<div class="small">' + esc(r.body) + '</div>' : '') +
+      '<div class="small">' + esc(when) + (r.target ? ' · Goes to: ' + esc(r.target) : '') + '</div></div>' +
+      '<button class="btn danger" type="button" data-del-note="' + r.id + '">Delete</button></div>';
+  }).join("");
+}
+$("updSend").addEventListener("click", async function(){
+  var title = $("upd_title").value.trim();
+  var body = $("upd_body").value.trim();
+  var target = $("upd_target").value;
+  var msg = $("updMsg");
+  if (!title){ msg.className = "msg err"; msg.textContent = "Give the update a title first."; return; }
+  var res = await sb.from("notifications").insert({ title: title, body: body, target: target, kind: "note" });
+  if (res.error){ msg.className = "msg err"; msg.textContent = "The update could not be sent: " + res.error.message; return; }
+  await logActivity("Sent an update", title);
+  $("upd_title").value = ""; $("upd_body").value = ""; $("upd_target").value = "";
+  msg.className = "msg ok"; msg.textContent = "Sent. It is now in the museum's Updates list.";
+  loadNotifications();
+});
+$("updList").addEventListener("click", async function(e){
+  var b = e.target.closest("[data-del-note]");
+  if (!b) return;
+  var row = null;
+  var res0 = await sb.from("notifications").select("id, title").eq("id", Number(b.getAttribute("data-del-note"))).maybeSingle();
+  if (res0 && res0.data) row = res0.data;
+  var res = await sb.from("notifications").delete().eq("id", Number(b.getAttribute("data-del-note")));
+  if (res.error){ $("updMsg").className = "msg err"; $("updMsg").textContent = "That update could not be deleted: " + res.error.message; return; }
+  await logActivity("Deleted an update", row ? (row.title || "") : "");
+  loadNotifications();
+});
+
 $("annSaveDraft").addEventListener("click", function(){ saveAnnouncement("draft"); });
 $("annPublish").addEventListener("click", function(){ saveAnnouncement("published"); });
 $("annClear").addEventListener("click", function(){ setVal("ann_key",""); setVal("ann_text",""); setVal("ann_from",""); setVal("ann_to",""); });

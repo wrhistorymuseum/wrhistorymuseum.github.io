@@ -2195,7 +2195,9 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
         function cancelGlide() { tween = null; stopTour(false); }
 
-        var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        function wrCalmOn() { try { return window.localStorage.getItem("wr-calm-motion") === "1"; } catch (e) { return false; } }
+        var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches || wrCalmOn();
+        window.__wrCalmApply = function () { reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches || wrCalmOn(); };
 
         /* drag look + tap pick */
         var raycaster = new THREE.Raycaster();
@@ -8029,5 +8031,1142 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   })();
   </script>
+<style id="wr-profile-style">
+/* Western Region History Museum — pass 7: entry registration gate, My Profile,
+   Your museum, bottom navigation, Updates (notifications). Appended after all
+   earlier passes; adds only new wr7- / wr-reg-gate / wr-profile classes and
+   never restyles an existing selector. */
+
+/* Bottom navigation */
+#wr7-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 34; display: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.99));
+  border-top: 1px solid rgba(27,42,107,.14);
+  box-shadow: 0 -6px 22px rgba(27,42,107,.10);
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px)); }
+body.wr7-navon #wr7-nav { display: flex; }
+.wr7-navbtn { flex: 1 1 0; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  background: none; border: none; border-radius: 12px; cursor: pointer; position: relative;
+  color: var(--navy); font-family: var(--font-label); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; padding: 4px 2px; }
+.wr7-navbtn svg { width: 23px; height: 23px; display: block; }
+.wr7-navbtn.active { color: var(--gold-deep); }
+.wr7-navbtn:active { background: rgba(201,162,39,.12); }
+.wr7-badge { position: absolute; top: 2px; left: calc(50% + 2px); min-width: 19px; height: 19px; border-radius: 999px;
+  background: var(--gold); color: #1b2a6b; font-family: var(--font-body); font-weight: 700; font-size: 11px; line-height: 19px;
+  text-align: center; padding: 0 5px; display: none; box-shadow: 0 1px 4px rgba(27,42,107,.25); }
+.wr7-badge.on { display: block; }
+
+/* Gate + profile sheets reuse .wr-sheet; additions below */
+.wr7-guestline { font-size: 13.5px; color: #46506e; text-align: center; margin: 2px 0 0; line-height: 1.5; }
+.wr7-orline { display: flex; align-items: center; gap: 10px; margin: 16px 0 4px; color: #8a93ad; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-family: var(--font-label); }
+.wr7-orline::before, .wr7-orline::after { content: ""; flex: 1; height: 1px; background: rgba(27,42,107,.14); }
+
+/* Profile photo */
+.wr-profile-photorow { display: flex; align-items: center; gap: 14px; margin: 4px 0 6px; }
+.wr-profile-photo { width: 76px; height: 76px; border-radius: 50%; flex: 0 0 auto; overflow: hidden;
+  border: 3px solid var(--gold); background: linear-gradient(135deg, #fdf6dd, #f3e3a1);
+  display: flex; align-items: center; justify-content: center; }
+.wr-profile-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wr-profile-photo .wr-profile-initial { font-family: var(--font-display); font-size: 34px; color: var(--gold-deep); line-height: 1; }
+.wr-profile-photoname { font-family: var(--font-label); font-size: 19px; color: var(--navy); line-height: 1.25; }
+.wr-profile-photosub { font-size: 13px; color: #5a6480; margin-top: 2px; }
+.wr-profile-msg { font-size: 13.5px; color: #3f6d1f; min-height: 0; margin: 4px 0 0; }
+.wr-profile-msg:empty { display: none; }
+
+/* Section sub-heads inside the profile sheet */
+.wr7-h { font-family: var(--font-label); font-size: 20px; color: var(--navy); margin: 20px 0 2px; letter-spacing: .02em; }
+.wr7-sub { font-size: 13.5px; color: #5a6480; margin: 0 0 8px; line-height: 1.5; }
+
+/* Settings rows */
+.wr7-setrow { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid rgba(27,42,107,.10); }
+.wr7-setrow:first-of-type { border-top: none; }
+.wr7-setmain { flex: 1 1 auto; }
+.wr7-setname { font-weight: 600; font-size: 15px; color: var(--ink); }
+.wr7-setline { font-size: 13px; color: #5a6480; line-height: 1.45; margin-top: 1px; }
+.wr7-switch { position: relative; width: 52px; height: 30px; flex: 0 0 auto; border-radius: 999px; border: 1px solid rgba(27,42,107,.25);
+  background: #e8eaf2; cursor: pointer; padding: 0; }
+.wr7-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 4px rgba(27,42,107,.3); transition: left .18s ease; }
+.wr7-switch[aria-checked="true"] { background: var(--gold); border-color: var(--gold-deep); }
+.wr7-switch[aria-checked="true"]::after { left: 24px; }
+
+/* Your museum blocks */
+.wr7-block { padding: 10px 0 2px; border-top: 1px solid rgba(27,42,107,.10); }
+.wr7-block:first-of-type { border-top: none; }
+.wr7-bname { font-family: var(--font-label); font-size: 16.5px; color: var(--navy); letter-spacing: .02em; }
+.wr7-bline { font-size: 14px; color: var(--ink); line-height: 1.55; margin-top: 3px; }
+.wr7-bline .wr7-dim { color: #5a6480; }
+.wr7-stoplist { margin: 8px 0 4px; display: flex; flex-direction: column; gap: 6px; }
+.wr7-stop { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.wr7-stopdot { width: 26px; height: 26px; border-radius: 50%; flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  border: 1.5px dashed rgba(27,42,107,.35); color: transparent; font-size: 13px; background: #fff; }
+.wr7-stop.got .wr7-stopdot { border: 1.5px solid var(--gold-deep); background: radial-gradient(circle at 35% 30%, #f7e08a, var(--gold)); color: #1b2a6b; font-weight: 700; }
+.wr7-stop .wr7-stopstate { margin-left: auto; font-size: 12.5px; color: #5a6480; }
+.wr7-stop.got .wr7-stopstate { color: var(--gold-deep); font-weight: 600; }
+.wr7-gb { background: #fdfaf0; border: 1px solid rgba(201,162,39,.4); border-radius: 12px; padding: 10px 12px; margin-top: 6px; }
+.wr7-gb .wr7-gbname { font-weight: 700; font-size: 14.5px; }
+.wr7-gb .wr7-gbchap { font-size: 13px; color: #5a6480; }
+.wr7-gb .wr7-gbmsg { font-size: 14px; line-height: 1.55; margin-top: 4px; font-style: italic; }
+.wr7-shareitem { padding: 7px 0; border-top: 1px dashed rgba(27,42,107,.14); }
+.wr7-shareitem:first-of-type { border-top: none; }
+.wr7-sharekind { font-weight: 600; font-size: 14px; }
+.wr7-sharedate { font-size: 12.5px; color: #5a6480; }
+.wr7-sharefirst { font-size: 13.5px; color: var(--ink); line-height: 1.5; }
+
+/* Passport panel photo row */
+#wr-profile-pp-row { display: none; align-items: center; gap: 10px; margin: 0 0 10px; }
+#wr-profile-pp-row.on { display: flex; }
+#wr-profile-pp-row img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold); display: block; }
+#wr-profile-pp-row .wr-profile-pp-name { font-family: var(--font-label); font-size: 17px; color: var(--navy); line-height: 1.2; }
+
+/* Updates sheet */
+.wr7-note { width: 100%; text-align: left; background: #fff; border: 1px solid rgba(27,42,107,.14); border-radius: 14px;
+  padding: 12px 14px; margin: 0 0 10px; cursor: pointer; font-family: var(--font-body); display: block; }
+.wr7-note.static { cursor: default; }
+.wr7-notet { font-family: var(--font-label); font-size: 17.5px; color: var(--navy); line-height: 1.3; }
+.wr7-noteb { font-size: 14px; color: var(--ink); line-height: 1.55; margin-top: 3px; }
+.wr7-noted { font-size: 12.5px; color: #5a6480; margin-top: 5px; }
+.wr7-notego { font-size: 12.5px; color: var(--gold-deep); font-weight: 600; margin-top: 4px; }
+
+/* Series credit footer inside the profile sheet */
+.wr-profile-credit { margin: 22px 0 2px; padding-top: 14px; border-top: 1px solid rgba(27,42,107,.12);
+  font-size: 12.5px; color: #5a6480; text-align: center; line-height: 1.6; }
+
+@media (max-width: 700px) {
+  .wr7-navbtn { font-size: 10px; }
+  .wr-profile-photo { width: 68px; height: 68px; }
+}
+
+</style>
+<script>
+/* ============================================================
+   WESTERN REGION HISTORY MUSEUM — pass 7 (appended last)
+   Entry registration gate, My Profile & settings, Your museum,
+   bottom navigation, and the Updates (notifications) sheet.
+   Everything here is additive: it reads the museum's existing
+   records (passport holder, stamps, hunt, guest book, check-ins,
+   chapter quiz, share form) and writes only its own new keys.
+   Failure-silent throughout, like the rest of the wiring.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  var SB_URL = "https://wlyfawqpsozcclwztmpv.supabase.co";
+  var SB_KEY = "sb_publishable_EEypoHRVCHw5hAlOV77lZA_g7Xtf9Pw";
+  var HOLDER_KEY = "wr-passport-holder";
+  var PP_KEY = "wr-museum-passport-v1";
+  var COMPLETED_KEY = "wr-passport-completed-on";
+  var BADGE_KEY = "wr-passport-opening-badge";
+  var HUNT_KEY = "wr-museum-hunt-v1";
+  var GB_KEY = "wr-museum-guestbook-v1";
+  var CI_KEY = "wr-chapter-checkins-v1";
+  var QB_KEY = "wr-chapter-quiz-v1";
+  var PHOTO_KEY = "wr-profile-photo";
+  var CALM_KEY = "wr-calm-motion";
+  var SHARES_KEY = "wr-profile-shares";
+  var SEEN_KEY = "wr-notifications-seen";
+  var GATE_SESSION_KEY = "wr-reg-gate-done";
+  var REVIEW_LINE = "Submissions go to History & Archives for review. Nothing enters the museum until it is approved.";
+  var CREDIT_LINE = "Brought to you by the Epistoleus and the History & Archives Committee, Sigma Gamma Rho Sorority, Inc., Western Region";
+  var STOPS7 = [
+    { id: "1940", name: "1940 · Los Angeles" },
+    { id: "1950", name: "1950 · Phoenix" },
+    { id: "1954", name: "1954 · Portland" },
+    { id: "1958", name: "1958 · Oakland" },
+    { id: "1964", name: "1964 · Berkeley" },
+    { id: "sigma-sigma", name: "The Sigma Sigma Room" },
+    { id: "crosland", name: "The Lessie Crosland Room" }
+  ];
+  var MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} }
+  function lsDel(k) { try { window.localStorage.removeItem(k); } catch (e) {} }
+  function lsJson(k, dflt) { try { var v = window.localStorage.getItem(k); return v ? JSON.parse(v) : dflt; } catch (e) { return dflt; } }
+  function esc(s) { return String(s == null ? "" : s); }
+
+  function loadHolder() {
+    var h = lsJson(HOLDER_KEY, null) || {};
+    return { name: esc(h.name).trim(), chapter: esc(h.chapter).trim(), joined: esc(h.joined).trim(), memberType: esc(h.memberType).trim() };
+  }
+  function holderIsSet() { var h = loadHolder(); return !!(h.name || h.chapter || h.joined || h.memberType); }
+  function saveHolder(h) {
+    lsSet(HOLDER_KEY, JSON.stringify({ name: h.name, chapter: h.chapter, joined: h.joined, memberType: h.memberType }));
+  }
+  function loadPhoto() { return lsGet(PHOTO_KEY) || ""; }
+  function savePhotoLocal(src) { if (src) lsSet(PHOTO_KEY, src); else lsDel(PHOTO_KEY); }
+
+  function fmtDate(d) {
+    if (!(d instanceof Date) || isNaN(d.getTime())) return "";
+    return MONTHS[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
+  }
+  function fmtIsoDate(iso) {
+    if (!iso) return "";
+    var p = String(iso).split("-");
+    if (p.length !== 3) return "";
+    var m = parseInt(p[1], 10), d = parseInt(p[2], 10), y = parseInt(p[0], 10);
+    if (!m || !d || !y) return "";
+    return MONTHS[m - 1] + " " + d + ", " + y;
+  }
+
+  /* ---------- Supabase (own client, same project) ---------- */
+  var sb7 = null, mySession = null, remoteWalker = null, sb7Tries = 0;
+  function initSb7() {
+    if (sb7) return;
+    if (window.supabase && window.supabase.createClient) {
+      try {
+        sb7 = window.supabase.createClient(SB_URL, SB_KEY);
+        sb7.auth.getSession().then(function (r) {
+          mySession = (r && r.data && r.data.session) || null;
+          afterSession();
+        }, function () {});
+        sb7.auth.onAuthStateChange(function (_evt, session) {
+          mySession = session || null;
+          afterSession();
+        });
+      } catch (e) { sb7 = null; }
+      return;
+    }
+    sb7Tries++;
+    if (sb7Tries === 1 && !document.querySelector('script[src*="supabase-js"]')) {
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js";
+      document.head.appendChild(s);
+    }
+    if (sb7Tries < 20) window.setTimeout(initSb7, 400);
+  }
+  function afterSession() {
+    renderSigninRows();
+    if (mySession && mySession.user) { fetchWalker(); fetchNotifications(); }
+  }
+  function sessionSyncPresent() {
+    try {
+      var raw = window.localStorage.getItem("sb-wlyfawqpsozcclwztmpv-auth-token");
+      if (!raw) return false;
+      var d = JSON.parse(raw);
+      return !!((d && d.user) || (d && d.currentSession && d.currentSession.user));
+    } catch (e) { return false; }
+  }
+
+  /* ---------- passport_walkers sync ---------- */
+  function effectiveHolder() {
+    var h = loadHolder();
+    if (h.name || h.chapter || h.joined || h.memberType) return h;
+    if (remoteWalker) {
+      return {
+        name: esc(remoteWalker.full_name).trim(), chapter: esc(remoteWalker.chapter).trim(),
+        joined: esc(remoteWalker.joined).trim(), memberType: esc(remoteWalker.member_type).trim()
+      };
+    }
+    return h;
+  }
+  function upsertWalker(extra) {
+    if (!sb7 || !mySession || !mySession.user) return;
+    var h = effectiveHolder();
+    var row = {
+      user_id: mySession.user.id, full_name: h.name, chapter: h.chapter,
+      joined: h.joined, member_type: h.memberType
+    };
+    if (extra) { for (var k in extra) row[k] = extra[k]; }
+    try {
+      sb7.from("passport_walkers").upsert(row, { onConflict: "user_id" }).then(function () {}, function () {});
+    } catch (e) {}
+  }
+  function fetchWalker() {
+    if (!sb7 || !mySession || !mySession.user) return;
+    var uid = mySession.user.id;
+    function apply(row) {
+      if (!row) return;
+      remoteWalker = row;
+      if (row.photo_url) {
+        if (!loadPhoto()) { savePhotoLocal(row.photo_url); refreshPhotos(); }
+      } else {
+        var lp = loadPhoto();
+        if (lp && lp.indexOf("data:") === 0) uploadPhoto(lp, true);
+      }
+      renderSigninRows();
+      if (profileOpen) prefillDetails();
+    }
+    try {
+      sb7.from("passport_walkers").select("full_name, chapter, joined, member_type, photo_url")
+        .eq("user_id", uid).maybeSingle().then(function (res) {
+          if (res && res.error) {
+            sb7.from("passport_walkers").select("full_name, chapter, joined, member_type")
+              .eq("user_id", uid).maybeSingle().then(function (r2) { if (r2 && r2.data) apply(r2.data); }, function () {});
+            return;
+          }
+          if (res && res.data) apply(res.data);
+        }, function () {});
+    } catch (e) {}
+  }
+
+  /* ---------- photo upload ---------- */
+  function dataUriToBlob(uri) {
+    var m = /^data:([^;]+);base64,([\s\S]*)$/.exec(uri || "");
+    if (!m) return null;
+    try {
+      var bin = atob(m[2]);
+      var arr = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      return new Blob([arr], { type: m[1] });
+    } catch (e) { return null; }
+  }
+  function uploadPhoto(dataUri, silent) {
+    if (!sb7 || !mySession || !mySession.user) return;
+    var blob = dataUriToBlob(dataUri);
+    if (!blob) { if (!silent) photoMsg("Your photo is saved on this device."); return; }
+    var path = mySession.user.id + "/photo-" + Date.now() + ".jpg";
+    try {
+      sb7.storage.from("profile-photos").upload(path, blob, { contentType: "image/jpeg", upsert: true }).then(function (res) {
+        if (res && res.error) { if (!silent) photoMsg("Your photo is saved on this device."); return; }
+        var pub = sb7.storage.from("profile-photos").getPublicUrl(path);
+        var url = pub && pub.data ? pub.data.publicUrl : "";
+        if (!url) { if (!silent) photoMsg("Your photo is saved on this device."); return; }
+        try {
+          sb7.from("passport_walkers").upsert({
+            user_id: mySession.user.id,
+            full_name: effectiveHolder().name, chapter: effectiveHolder().chapter,
+            joined: effectiveHolder().joined, member_type: effectiveHolder().memberType,
+            photo_url: url
+          }, { onConflict: "user_id" }).then(function (r2) {
+            if (r2 && r2.error) { if (!silent) photoMsg("Your photo is saved on this device."); return; }
+            if (remoteWalker) remoteWalker.photo_url = url;
+            if (!silent) photoMsg("Your photo is saved.");
+          }, function () { if (!silent) photoMsg("Your photo is saved on this device."); });
+        } catch (e) { if (!silent) photoMsg("Your photo is saved on this device."); }
+      }, function () { if (!silent) photoMsg("Your photo is saved on this device."); });
+    } catch (e) { if (!silent) photoMsg("Your photo is saved on this device."); }
+  }
+  function photoMsg(t) { var m = $("wr-profile-photo-msg"); if (m) m.textContent = t || ""; }
+
+  /* ---------- shared sheet plumbing ---------- */
+  var profileOpen = false, notesOpen = false, gateOpen = false;
+  function closeOtherSheets() {
+    var sheets = document.querySelectorAll(".wr-sheet.open");
+    for (var i = 0; i < sheets.length; i++) {
+      if (sheets[i].id !== "wr-reg-gate" && sheets[i].id !== "wr-profile" && sheets[i].id !== "wr7-notes") sheets[i].classList.remove("open");
+    }
+    var scrims = document.querySelectorAll(".wr-scrim.show, .wr2-scrim.show, .wr3-scrim.show, .wr6-scrim.show");
+    for (var j = 0; j < scrims.length; j++) scrims[j].classList.remove("show");
+  }
+  function showMine(sheet) {
+    closeOtherSheets();
+    closeMine(true);
+    var sc = $("wr7-scrim");
+    if (sc) sc.classList.add("show");
+    if (sheet) sheet.classList.add("open");
+  }
+  function closeMine(keepScrim) {
+    var g = $("wr-reg-gate"), p = $("wr-profile"), n = $("wr7-notes");
+    if (g) g.classList.remove("open");
+    if (p) p.classList.remove("open");
+    if (n) n.classList.remove("open");
+    gateOpen = false; profileOpen = false; notesOpen = false;
+    if (!keepScrim) { var sc = $("wr7-scrim"); if (sc) sc.classList.remove("show"); }
+  }
+
+  /* ---------- DOM construction ---------- */
+  function regField(labelText, inputId, type, ph) {
+    var wrap = el("div", "wr-pp-reg-f");
+    wrap.appendChild(el("label", null, labelText)).htmlFor = inputId;
+    var inp = document.createElement("input");
+    inp.className = "wr-pp-reg-in"; inp.id = inputId; inp.type = type || "text";
+    if (ph) inp.placeholder = ph;
+    inp.setAttribute("autocomplete", "off");
+    wrap.appendChild(inp);
+    return wrap;
+  }
+  function regSelect(labelText, selectId, options) {
+    var wrap = el("div", "wr-pp-reg-f");
+    var lab = el("label", null, labelText); lab.htmlFor = selectId; wrap.appendChild(lab);
+    var sel = document.createElement("select");
+    sel.className = "wr-pp-reg-in"; sel.id = selectId;
+    options.forEach(function (o) { var op = document.createElement("option"); op.value = o; op.textContent = o; sel.appendChild(op); });
+    wrap.appendChild(sel);
+    return wrap;
+  }
+  var MEMBER_OPTS = ["", "Graduate member", "Undergraduate member", "Associate / other", "Guest / friend of the region"];
+  function signinForm(prefix) {
+    var box = el("div");
+    box.appendChild(regField("Email address", prefix + "-email", "email", "you@example.org"));
+    var btn = el("button", "wr-pp-reg-btn", "Email me a sign-in link");
+    btn.type = "button"; btn.id = prefix + "-send";
+    box.appendChild(btn);
+    var msg = el("p", "wr-pp-reg-msg"); msg.id = prefix + "-msg";
+    box.appendChild(msg);
+    return box;
+  }
+
+  function buildDom() {
+    if ($("wr7-nav")) return;
+
+    /* scrim */
+    var scrim = el("div", "wr-scrim"); scrim.id = "wr7-scrim";
+    scrim.addEventListener("click", function () { closeMine(); });
+    document.body.appendChild(scrim);
+
+    /* ---- Gate sheet ---- */
+    var gate = el("section", "wr-sheet"); gate.id = "wr-reg-gate";
+    gate.setAttribute("role", "dialog"); gate.setAttribute("aria-label", "Before you walk in");
+    var ghead = el("div", "wr-sheet-head");
+    var gtw = el("div");
+    gtw.appendChild(el("div", "wr-sheet-t", "Before you walk in"));
+    gtw.appendChild(el("div", "wr-sheet-s", "Register once, and your passport stamps follow you on any device."));
+    ghead.appendChild(gtw);
+    var gx = el("button", "wr-sheet-x", "×"); gx.type = "button"; gx.id = "wr-reg-gate-x"; gx.setAttribute("aria-label", "Close and enter as guest");
+    ghead.appendChild(gx);
+    gate.appendChild(ghead);
+    var gbody = el("div", "wr-sheet-body");
+    gbody.appendChild(signinForm("wr-reg-gate"));
+    var gor = el("div", "wr7-orline", "or save your details here"); gbody.appendChild(gor);
+    gbody.appendChild(regField("Your name", "wr-reg-gate-name", "text", "Your full name"));
+    gbody.appendChild(regField("Your chapter", "wr-reg-gate-chapter", "text", "e.g. Beta Mu Sigma"));
+    gbody.appendChild(regField("When did you join Sigma Gamma Rho?", "wr-reg-gate-joined", "text", "e.g. Spring 1998"));
+    gbody.appendChild(regSelect("Member type", "wr-reg-gate-member", MEMBER_OPTS));
+    var gsave = el("button", "wr-pp-reg-btn", "Save and enter"); gsave.type = "button"; gsave.id = "wr-reg-gate-save";
+    gbody.appendChild(gsave);
+    var gor2 = el("div", "wr7-orline", "or"); gbody.appendChild(gor2);
+    var gguest = el("button", "wr-pp-reg-btn ghost", "Enter as guest"); gguest.type = "button"; gguest.id = "wr-reg-gate-guest";
+    gbody.appendChild(gguest);
+    gbody.appendChild(el("p", "wr7-guestline", "Coming in as a guest is fine too. Your stamps stay on this device."));
+    gate.appendChild(gbody);
+    document.body.appendChild(gate);
+
+    /* ---- Profile sheet ---- */
+    var prof = el("section", "wr-sheet"); prof.id = "wr-profile";
+    prof.setAttribute("role", "dialog"); prof.setAttribute("aria-label", "My Profile");
+    var phead = el("div", "wr-sheet-head");
+    var ptw = el("div");
+    ptw.appendChild(el("div", "wr-sheet-t", "My Profile"));
+    ptw.appendChild(el("div", "wr-sheet-s", "Your details, your photo, and your museum, all in one place."));
+    phead.appendChild(ptw);
+    var px = el("button", "wr-sheet-x", "×"); px.type = "button"; px.id = "wr-profile-x"; px.setAttribute("aria-label", "Close profile");
+    phead.appendChild(px);
+    prof.appendChild(phead);
+    var pb = el("div", "wr-sheet-body");
+
+    var prow = el("div", "wr-profile-photorow");
+    var pphoto = el("div", "wr-profile-photo"); pphoto.id = "wr-profile-photo";
+    prow.appendChild(pphoto);
+    var ptxt = el("div");
+    var pname = el("div", "wr-profile-photoname", "Welcome, Soror"); pname.id = "wr-profile-photoname";
+    ptxt.appendChild(pname);
+    ptxt.appendChild(el("div", "wr-profile-photosub", "Your photo stays round, gold, and yours."));
+    var pbtn = el("button", "wr-pp-reg-btn ghost", "Add your photo"); pbtn.type = "button"; pbtn.id = "wr-profile-photo-btn";
+    pbtn.style.marginTop = "8px";
+    ptxt.appendChild(pbtn);
+    var fileInp = document.createElement("input");
+    fileInp.type = "file"; fileInp.id = "wr-profile-file"; fileInp.accept = "image/*"; fileInp.style.display = "none";
+    ptxt.appendChild(fileInp);
+    prow.appendChild(ptxt);
+    pb.appendChild(prow);
+    var pmsg = el("p", "wr-profile-msg"); pmsg.id = "wr-profile-photo-msg"; pb.appendChild(pmsg);
+
+    pb.appendChild(regField("Your name", "wr-profile-name", "text", "Your full name"));
+    pb.appendChild(regField("Your chapter", "wr-profile-chapter", "text", "e.g. Beta Mu Sigma"));
+    pb.appendChild(regField("When did you join Sigma Gamma Rho?", "wr-profile-joined", "text", "e.g. Spring 1998"));
+    pb.appendChild(regSelect("Member type", "wr-profile-member", MEMBER_OPTS));
+    var psave = el("button", "wr-pp-reg-btn", "Save your details"); psave.type = "button"; psave.id = "wr-profile-save";
+    pb.appendChild(psave);
+    var psavemsg = el("p", "wr-pp-reg-msg"); psavemsg.id = "wr-profile-save-msg"; pb.appendChild(psavemsg);
+
+    pb.appendChild(el("div", "wr7-h", "Your museum"));
+    pb.appendChild(el("p", "wr7-sub", "Your passport, and everything you have put into the museum."));
+    var ym = el("div"); ym.id = "wr-profile-yours"; pb.appendChild(ym);
+
+    pb.appendChild(el("div", "wr7-h", "Sign in"));
+    var signinBox = el("div"); signinBox.id = "wr-profile-signin"; pb.appendChild(signinBox);
+
+    pb.appendChild(el("div", "wr7-h", "Settings"));
+    var calmRow = el("div", "wr7-setrow");
+    var calmMain = el("div", "wr7-setmain");
+    calmMain.appendChild(el("div", "wr7-setname", "Calm motion"));
+    calmMain.appendChild(el("div", "wr7-setline", "The doors open without the swing, and the camera moves right away."));
+    calmRow.appendChild(calmMain);
+    var calmSw = el("button", "wr7-switch"); calmSw.type = "button"; calmSw.id = "wr-profile-calm";
+    calmSw.setAttribute("role", "switch"); calmSw.setAttribute("aria-checked", "false"); calmSw.setAttribute("aria-label", "Calm motion");
+    calmRow.appendChild(calmSw);
+    pb.appendChild(calmRow);
+    var resetRow = el("div", "wr7-setrow");
+    var resetMain = el("div", "wr7-setmain");
+    resetMain.appendChild(el("div", "wr7-setname", "Passport"));
+    resetMain.appendChild(el("div", "wr7-setline", "Start your passport over, with no stamps."));
+    resetRow.appendChild(resetMain);
+    var resetBtn = el("button", "wr-pp-reg-btn ghost", "Reset my passport"); resetBtn.type = "button"; resetBtn.id = "wr-profile-reset";
+    resetRow.appendChild(resetBtn);
+    pb.appendChild(resetRow);
+    var resetMsg = el("p", "wr-pp-reg-msg"); resetMsg.id = "wr-profile-reset-msg"; pb.appendChild(resetMsg);
+
+    pb.appendChild(el("div", "wr-profile-credit", CREDIT_LINE));
+    prof.appendChild(pb);
+    document.body.appendChild(prof);
+
+    /* ---- Updates sheet ---- */
+    var notes = el("section", "wr-sheet"); notes.id = "wr7-notes";
+    notes.setAttribute("role", "dialog"); notes.setAttribute("aria-label", "Updates");
+    var nhead = el("div", "wr-sheet-head");
+    var ntw = el("div");
+    ntw.appendChild(el("div", "wr-sheet-t", "Updates"));
+    ntw.appendChild(el("div", "wr-sheet-s", "What is new in the museum."));
+    nhead.appendChild(ntw);
+    var nx = el("button", "wr-sheet-x", "×"); nx.type = "button"; nx.id = "wr7-notes-x"; nx.setAttribute("aria-label", "Close updates");
+    nhead.appendChild(nx);
+    notes.appendChild(nhead);
+    var nbody = el("div", "wr-sheet-body");
+    var nlist = el("div"); nlist.id = "wr7-notes-list"; nbody.appendChild(nlist);
+    notes.appendChild(nbody);
+    document.body.appendChild(notes);
+
+    /* ---- Bottom nav ---- */
+    var nav = el("nav"); nav.id = "wr7-nav"; nav.setAttribute("aria-label", "Museum");
+    var stops = [
+      { id: "museum", label: "Museum", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 4l9 5.5"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3.5 20.5h17"/></svg>' },
+      { id: "rooms", label: "Rooms", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 4.5h6v6h-6zM13.5 4.5h6v6h-6zM4.5 13.5h6v6h-6zM13.5 13.5h6v6h-6z"/></svg>' },
+      { id: "passport", label: "Passport", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3.5h8.5A2.5 2.5 0 0 1 19 6v12a2.5 2.5 0 0 1-2.5 2.5H8z"/><path d="M8 3.5v17"/><circle cx="13.5" cy="11" r="2.1"/></svg>' },
+      { id: "updates", label: "Updates", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16v-4.5a6 6 0 0 1 12 0V16l1.6 3.2H4.4z"/><path d="M10.2 21a2 2 0 0 0 3.6 0"/></svg>' },
+      { id: "profile", label: "Profile", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20.2a7.2 7.2 0 0 1 14 0"/></svg>' }
+    ];
+    stops.forEach(function (st) {
+      var b = el("button", "wr7-navbtn"); b.type = "button"; b.id = "wr7-nav-" + st.id;
+      b.setAttribute("data-stop", st.id); b.setAttribute("aria-label", st.label);
+      var ic = el("span"); ic.innerHTML = st.svg; b.appendChild(ic);
+      b.appendChild(el("span", null, st.label));
+      if (st.id === "updates") { var bd = el("span", "wr7-badge"); bd.id = "wr7-badge"; b.appendChild(bd); }
+      b.addEventListener("click", function (e) { if (e) e.stopPropagation(); navGo(st.id); });
+      nav.appendChild(b);
+    });
+    document.body.appendChild(nav);
+
+    /* ---- Passport panel photo row (sibling above the holder area) ---- */
+    var holder = $("wr-pp-holder");
+    if (holder && holder.parentNode) {
+      var row = el("div"); row.id = "wr-profile-pp-row";
+      var im = document.createElement("img"); im.id = "wr-profile-pp-img"; im.alt = "";
+      row.appendChild(im);
+      var nm = el("div", "wr-profile-pp-name"); nm.id = "wr-profile-pp-name";
+      row.appendChild(nm);
+      holder.parentNode.insertBefore(row, holder);
+    }
+
+    wireEvents();
+    refreshPhotos();
+    renderSigninRows();
+    syncCalmSwitch();
+    window.setInterval(navSync, 600);
+    window.setInterval(refreshPpPhotoRow, 1500);
+  }
+
+  /* ---------- sign-in link (shared by gate + profile) ---------- */
+  function sendSignInLink(emailId, msgId, btn) {
+    var em = ($(emailId) ? $(emailId).value : "").trim();
+    var msg = $(msgId);
+    function say(t) { if (msg) msg.textContent = t; }
+    if (!em || em.indexOf("@") < 0) { say("Add your email address first."); return; }
+    if (!sb7) { say("Sign-in is warming up. Give it a moment and try again."); initSb7(); return; }
+    if (btn) btn.disabled = true;
+    say("Sending your sign-in link…");
+    try {
+      sb7.auth.signInWithOtp({ email: em, options: { emailRedirectTo: window.location.origin + window.location.pathname } }).then(function (res) {
+        if (btn) btn.disabled = false;
+        if (res && res.error) { say("That sign-in link could not be sent. Check the email address and try again."); return; }
+        say("Check your email. Your sign-in link is on its way.");
+      }, function () { if (btn) btn.disabled = false; say("That sign-in link could not be sent. Check the email address and try again."); });
+    } catch (e) { if (btn) btn.disabled = false; say("That sign-in link could not be sent. Check the email address and try again."); }
+  }
+
+  /* ---------- the entry gate ---------- */
+  var gateBypass = false;
+  function gateNeeded() {
+    if (gateBypass) return false;
+    try { if (window.sessionStorage.getItem(GATE_SESSION_KEY) === "1") return false; } catch (e) {}
+    if (holderIsSet()) return false;
+    if (mySession && mySession.user) return false;
+    if (sessionSyncPresent()) return false;
+    return true;
+  }
+  function markGateDone() { try { window.sessionStorage.setItem(GATE_SESSION_KEY, "1"); } catch (e) {} }
+  function proceedThroughGate() {
+    markGateDone();
+    closeMine();
+    gateBypass = true;
+    var b = $("btn-enter");
+    if (b) b.click();
+    window.setTimeout(function () { gateBypass = false; }, 1200);
+  }
+  function onEnterIntercept(e) {
+    var t = e.target;
+    if (!t || !t.closest || !t.closest("#btn-enter")) return;
+    if (!gateNeeded()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    showMine($("wr-reg-gate"));
+    gateOpen = true;
+  }
+
+  /* ---------- profile: photo ---------- */
+  function initialFor(name) {
+    var n = (name || "").trim();
+    return n ? n.charAt(0).toUpperCase() : "S";
+  }
+  function refreshPhotos() {
+    var src = loadPhoto();
+    var box = $("wr-profile-photo");
+    if (box) {
+      box.innerHTML = "";
+      if (src) { var im = document.createElement("img"); im.src = src; im.alt = ""; box.appendChild(im); }
+      else box.appendChild(el("span", "wr-profile-initial", initialFor(effectiveHolder().name)));
+    }
+    var btn = $("wr-profile-photo-btn");
+    if (btn) btn.textContent = src ? "Change photo" : "Add your photo";
+    var nm = $("wr-profile-photoname");
+    if (nm) { var h = effectiveHolder(); nm.textContent = h.name ? h.name : "Welcome, Soror"; }
+    refreshPpPhotoRow();
+  }
+  function refreshPpPhotoRow() {
+    var row = $("wr-profile-pp-row");
+    if (!row) return;
+    var src = loadPhoto();
+    var h = loadHolder();
+    if (src && (h.name || holderIsSet())) {
+      row.classList.add("on");
+      var im = $("wr-profile-pp-img"); if (im && im.getAttribute("src") !== src) im.src = src;
+      var nm = $("wr-profile-pp-name"); if (nm) nm.textContent = h.name || "";
+    } else {
+      row.classList.remove("on");
+    }
+  }
+  function processPhotoFile(file, done) {
+    var url;
+    try { url = URL.createObjectURL(file); } catch (e) { done(null); return; }
+    var img = new Image();
+    img.onload = function () {
+      try {
+        var side = Math.min(img.naturalWidth, img.naturalHeight);
+        if (!side) { URL.revokeObjectURL(url); done(null); return; }
+        var scale = Math.min(1, 512 / side);
+        var w = Math.max(1, Math.round(side * scale));
+        var cv = document.createElement("canvas"); cv.width = w; cv.height = w;
+        var cx = cv.getContext("2d");
+        cx.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, w, w);
+        URL.revokeObjectURL(url);
+        done(cv.toDataURL("image/jpeg", 0.85));
+      } catch (e) { try { URL.revokeObjectURL(url); } catch (e2) {} done(null); }
+    };
+    img.onerror = function () { try { URL.revokeObjectURL(url); } catch (e) {} done(null); };
+    img.src = url;
+  }
+  function onPhotoChosen(file) {
+    if (!file) return;
+    photoMsg("");
+    processPhotoFile(file, function (dataUri) {
+      if (!dataUri) { photoMsg("That photo could not be read. Try another one."); return; }
+      savePhotoLocal(dataUri);
+      refreshPhotos();
+      if (mySession && mySession.user) uploadPhoto(dataUri, false);
+    });
+  }
+
+  /* ---------- profile: details + settings ---------- */
+  function prefillDetails() {
+    var h = effectiveHolder();
+    if ($("wr-profile-name")) $("wr-profile-name").value = h.name;
+    if ($("wr-profile-chapter")) $("wr-profile-chapter").value = h.chapter;
+    if ($("wr-profile-joined")) $("wr-profile-joined").value = h.joined;
+    if ($("wr-profile-member")) $("wr-profile-member").value = h.memberType;
+    refreshPhotos();
+  }
+  function saveDetailsFrom(prefix) {
+    var h = {
+      name: ($(prefix + "-name") ? $(prefix + "-name").value : "").trim(),
+      chapter: ($(prefix + "-chapter") ? $(prefix + "-chapter").value : "").trim(),
+      joined: ($(prefix + "-joined") ? $(prefix + "-joined").value : "").trim(),
+      memberType: ($(prefix + "-member") ? $(prefix + "-member").value : "").trim()
+    };
+    saveHolder(h);
+    upsertWalker(null);
+    return h;
+  }
+  function syncCalmSwitch() {
+    var sw = $("wr-profile-calm");
+    if (sw) sw.setAttribute("aria-checked", lsGet(CALM_KEY) === "1" ? "true" : "false");
+  }
+  var resetArmUntil = 0;
+  function onResetPassport(btn) {
+    var msg = $("wr-profile-reset-msg");
+    var now = Date.now();
+    if (now > resetArmUntil) {
+      resetArmUntil = now + 4000;
+      btn.textContent = "Tap again to clear all stamps";
+      if (msg) msg.textContent = "";
+      window.setTimeout(function () {
+        if (Date.now() > resetArmUntil) btn.textContent = "Reset my passport";
+      }, 4200);
+      return;
+    }
+    resetArmUntil = 0;
+    btn.textContent = "Reset my passport";
+    lsSet(PP_KEY, "[]");
+    lsDel(COMPLETED_KEY);
+    if (sb7 && mySession && mySession.user) {
+      try { sb7.from("passport_stamps").delete().eq("user_id", mySession.user.id).then(function () {}, function () {}); } catch (e) {}
+    }
+    if (msg) msg.textContent = "Your passport is clear.";
+    renderYourMuseum();
+  }
+
+  /* ---------- sign-in rows ---------- */
+  function renderSigninRows() {
+    var box = $("wr-profile-signin");
+    if (!box) return;
+    box.innerHTML = "";
+    if (mySession && mySession.user) {
+      var line = el("p", "wr7-bline");
+      line.appendChild(document.createTextNode("Signed in as "));
+      var b = el("b", null, mySession.user.email || ""); line.appendChild(b);
+      box.appendChild(line);
+      var out = el("button", "wr-pp-reg-btn ghost", "Sign out"); out.type = "button"; out.id = "wr-profile-signout";
+      out.addEventListener("click", function () {
+        if (!sb7) return;
+        try { sb7.auth.signOut().then(function () { mySession = null; renderSigninRows(); }, function () {}); } catch (e) {}
+      });
+      box.appendChild(out);
+    } else {
+      box.appendChild(signinForm("wr-profile"));
+      var send = $("wr-profile-send");
+      if (send) send.addEventListener("click", function () { sendSignInLink("wr-profile-email", "wr-profile-msg", send); });
+    }
+  }
+
+  /* ---------- Your museum ---------- */
+  function ppStamps() {
+    var raw = lsJson(PP_KEY, []);
+    var out = [], seen = {};
+    if (Array.isArray(raw)) {
+      raw.forEach(function (s) {
+        var id = String(s);
+        if (id === "crossland") id = "crosland";
+        if (!seen[id]) { seen[id] = true; out.push(id); }
+      });
+    }
+    return out;
+  }
+  function stopName(id) {
+    for (var i = 0; i < STOPS7.length; i++) if (STOPS7[i].id === id) return STOPS7[i].name;
+    return id;
+  }
+  function renderYourMuseum() {
+    var box = $("wr-profile-yours");
+    if (!box) return;
+    box.innerHTML = "";
+    var h = loadHolder();
+
+    /* Passport */
+    var stamps = ppStamps();
+    var pb = el("div", "wr7-block");
+    pb.appendChild(el("div", "wr7-bname", "Your passport"));
+    var pl = el("p", "wr7-bline");
+    pl.appendChild(el("b", null, String(stamps.length)));
+    pl.appendChild(document.createTextNode(" of 7 stamps"));
+    pb.appendChild(pl);
+    var list = el("div", "wr7-stoplist");
+    STOPS7.forEach(function (st) {
+      var got = stamps.indexOf(st.id) >= 0;
+      var row = el("div", "wr7-stop" + (got ? " got" : ""));
+      row.appendChild(el("span", "wr7-stopdot", got ? "✓" : ""));
+      row.appendChild(el("span", null, st.name));
+      row.appendChild(el("span", "wr7-stopstate", got ? "Stamped" : "Not yet"));
+      list.appendChild(row);
+    });
+    pb.appendChild(list);
+    var completedOn = lsGet(COMPLETED_KEY);
+    if (stamps.length >= 7 && completedOn) {
+      pb.appendChild(el("p", "wr7-bline", "Completed " + fmtIsoDate(completedOn) + ". I walked our history."));
+    }
+    if (lsGet(BADGE_KEY) === "2026") {
+      pb.appendChild(el("p", "wr7-bline", "★ Founders Month Opening, November 22 to 29, 2026. You were here for the opening."));
+    }
+    var openBtn = el("button", "wr-pp-reg-btn ghost", "Open my passport"); openBtn.type = "button";
+    openBtn.addEventListener("click", function () {
+      closeMine();
+      var b = $("wr-btn-passport");
+      if (b) b.click();
+    });
+    pb.appendChild(openBtn);
+    box.appendChild(pb);
+
+    /* Stories + hunt */
+    var sb = el("div", "wr7-block");
+    sb.appendChild(el("div", "wr7-bname", "Exploring"));
+    var vn = $("viewed-n"), vt = $("viewed-total");
+    var seenN = vn ? vn.textContent.trim() : "0";
+    var totN = vt ? vt.textContent.trim() : "";
+    var sl = el("p", "wr7-bline");
+    sl.appendChild(document.createTextNode("Stories explored: "));
+    sl.appendChild(el("b", null, seenN));
+    if (totN) sl.appendChild(document.createTextNode(" of " + totN));
+    sb.appendChild(sl);
+    var hunt = lsJson(HUNT_KEY, []);
+    var huntN = Array.isArray(hunt) ? hunt.length : 0;
+    var hl = el("p", "wr7-bline");
+    hl.appendChild(document.createTextNode("Scavenger hunt: "));
+    hl.appendChild(el("b", null, String(huntN)));
+    hl.appendChild(document.createTextNode(" of 5 marks found"));
+    sb.appendChild(hl);
+    box.appendChild(sb);
+
+    /* Chapter check-in */
+    var cb = el("div", "wr7-block");
+    cb.appendChild(el("div", "wr7-bname", "Chapter check-in"));
+    var cis = lsJson(CI_KEY, []);
+    var ci = (Array.isArray(cis) && cis.length) ? cis[cis.length - 1] : null;
+    if (ci && ci.chapter) {
+      var cl = el("p", "wr7-bline");
+      cl.appendChild(el("b", null, ci.chapter));
+      if (ci.state) cl.appendChild(document.createTextNode(" · " + ci.state));
+      if (ci.ts) cl.appendChild(el("span", "wr7-dim", " · " + fmtDate(new Date(ci.ts))));
+      cb.appendChild(cl);
+    } else {
+      cb.appendChild(el("p", "wr7-bline", "You have not checked in a chapter yet."));
+    }
+    box.appendChild(cb);
+
+    /* Chapter quiz */
+    var qb = el("div", "wr7-block");
+    qb.appendChild(el("div", "wr7-bname", "Chapter quiz"));
+    var entries = lsJson(QB_KEY, []);
+    var mine = [];
+    if (Array.isArray(entries) && h.chapter) {
+      var target = h.chapter.toLowerCase();
+      entries.forEach(function (e2) { if (e2 && e2.chapter && String(e2.chapter).toLowerCase() === target) mine.push(e2); });
+    }
+    if (mine.length) {
+      var best = mine[0];
+      mine.forEach(function (e2) { if ((e2.score || 0) > (best.score || 0)) best = e2; });
+      var ql = el("p", "wr7-bline");
+      ql.appendChild(document.createTextNode("Best score for "));
+      ql.appendChild(el("b", null, h.chapter));
+      ql.appendChild(document.createTextNode(": "));
+      ql.appendChild(el("b", null, (best.score || 0) + " of " + (best.total || 0)));
+      qb.appendChild(ql);
+      qb.appendChild(el("p", "wr7-bline", mine.length + (mine.length === 1 ? " quiz" : " quizzes") + " finished by your chapter on this device."));
+    } else {
+      qb.appendChild(el("p", "wr7-bline", "Your chapter has not finished a quiz yet."));
+    }
+    box.appendChild(qb);
+
+    /* Guest book */
+    var gb = el("div", "wr7-block");
+    gb.appendChild(el("div", "wr7-bname", "Guest book"));
+    var gbs = lsJson(GB_KEY, []);
+    var g1 = null;
+    if (Array.isArray(gbs) && gbs.length) {
+      g1 = gbs[0];
+      if (h.name) {
+        var want = h.name.toLowerCase();
+        for (var gi = 0; gi < gbs.length; gi++) {
+          if ((gbs[gi].name || "").trim().toLowerCase() === want) { g1 = gbs[gi]; break; }
+        }
+      }
+    }
+    if (g1 && (g1.name || g1.message)) {
+      var card = el("div", "wr7-gb");
+      card.appendChild(el("div", "wr7-gbname", g1.name || ""));
+      if (g1.chapter) card.appendChild(el("div", "wr7-gbchap", g1.chapter + (g1.year ? " · " + g1.year : "")));
+      if (g1.message) card.appendChild(el("div", "wr7-gbmsg", "“" + g1.message + "”"));
+      gb.appendChild(card);
+    } else {
+      gb.appendChild(el("p", "wr7-bline", "You have not signed the guest book yet."));
+    }
+    box.appendChild(gb);
+
+    /* Shares */
+    var shb = el("div", "wr7-block");
+    shb.appendChild(el("div", "wr7-bname", "What you have shared"));
+    var shares = lsJson(SHARES_KEY, []);
+    if (Array.isArray(shares) && shares.length) {
+      shares.slice().reverse().forEach(function (s2) {
+        var it = el("div", "wr7-shareitem");
+        var top = el("div");
+        top.appendChild(el("span", "wr7-sharekind", s2.kind || "A share"));
+        if (s2.ts) top.appendChild(el("span", "wr7-sharedate", " · " + fmtDate(new Date(s2.ts))));
+        it.appendChild(top);
+        if (s2.first) it.appendChild(el("div", "wr7-sharefirst", s2.first));
+        shb.appendChild(it);
+      });
+    } else {
+      shb.appendChild(el("p", "wr7-bline", "You have not shared anything with the museum yet."));
+    }
+    shb.appendChild(el("p", "wr7-bline", REVIEW_LINE));
+    box.appendChild(shb);
+  }
+
+  /* ---------- share submissions log (observes the share form's own result line) ---------- */
+  var pendingShare = null;
+  function hookShareForm() {
+    var form = $("wr6-form");
+    if (!form || form.__wr7Hooked) return;
+    form.__wr7Hooked = true;
+    form.addEventListener("submit", function () {
+      var kind = $("wr6-kind") ? $("wr6-kind").value : "";
+      var desc = $("wr6-desc") ? $("wr6-desc").value : "";
+      var first = (desc || "").split("\n")[0].trim();
+      if (first.length > 140) first = first.slice(0, 140);
+      pendingShare = { kind: kind, first: first, ts: Date.now() };
+    }, true);
+    var msg = $("wr6-msg");
+    if (msg && window.MutationObserver) {
+      var mo = new MutationObserver(function () {
+        if (!pendingShare) return;
+        var t = (msg.textContent || "").trim();
+        if (t.indexOf("Thank you") === 0) {
+          var log = lsJson(SHARES_KEY, []);
+          if (!Array.isArray(log)) log = [];
+          log.push(pendingShare);
+          if (log.length > 50) log = log.slice(log.length - 50);
+          lsSet(SHARES_KEY, JSON.stringify(log));
+          pendingShare = null;
+        } else if (t.indexOf("could not be sent") >= 0) {
+          pendingShare = null;
+        }
+      });
+      mo.observe(msg, { childList: true, characterData: true, subtree: true });
+    }
+  }
+
+  /* ---------- notifications ---------- */
+  var notesCache = null;
+  function lastSeenTs() { var v = parseInt(lsGet(SEEN_KEY) || "0", 10); return isNaN(v) ? 0 : v; }
+  function unreadCount() {
+    if (!Array.isArray(notesCache)) return 0;
+    var ls = lastSeenTs(), n = 0;
+    notesCache.forEach(function (r) { if (Date.parse(r.created_at) > ls) n++; });
+    return n;
+  }
+  function updateBadge() {
+    var bd = $("wr7-badge");
+    if (!bd) return;
+    var n = unreadCount();
+    bd.textContent = n > 9 ? "9+" : String(n);
+    bd.classList.toggle("on", n > 0);
+  }
+  function fetchNotifications() {
+    if (!sb7) return;
+    try {
+      sb7.from("notifications").select("id, title, body, target, kind, created_at")
+        .order("created_at", { ascending: false }).limit(50).then(function (res) {
+          if (res && !res.error && Array.isArray(res.data)) {
+            notesCache = res.data;
+            updateBadge();
+            if (notesOpen) renderNotes();
+          }
+        }, function () {});
+    } catch (e) {}
+  }
+  function renderNotes() {
+    var list = $("wr7-notes-list");
+    if (!list) return;
+    list.innerHTML = "";
+    if (!Array.isArray(notesCache) || !notesCache.length) {
+      list.appendChild(el("p", "wr7-bline", "No updates yet. When the museum adds something new, it will be listed here."));
+      return;
+    }
+    notesCache.forEach(function (r) {
+      var hasTarget = !!(r.target && String(r.target).trim());
+      var b = el("button", "wr7-note" + (hasTarget ? "" : " static"));
+      b.type = "button";
+      b.appendChild(el("div", "wr7-notet", r.title || "Museum update"));
+      if (r.body) b.appendChild(el("div", "wr7-noteb", r.body));
+      var d = Date.parse(r.created_at);
+      if (!isNaN(d)) b.appendChild(el("div", "wr7-noted", fmtDate(new Date(d))));
+      if (hasTarget) b.appendChild(el("div", "wr7-notego", "Tap to go there"));
+      if (hasTarget) b.addEventListener("click", function () { gotoTarget(r); });
+      list.appendChild(b);
+    });
+  }
+  function gotoTarget(r) {
+    var target = String(r.target || "").trim();
+    var title = String(r.title || "").trim();
+    closeMine();
+    window.setTimeout(function () {
+      var done = false;
+      if (target.indexOf("exhibit:") === 0) {
+        var c = window.__WR_CONTENT || {};
+        var row = c[target];
+        var headline = row && row.value && row.value.headline ? String(row.value.headline) : title;
+        var input = $("search-input");
+        if (input && headline) {
+          input.value = headline;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          window.setTimeout(function () {
+            var results = document.querySelectorAll("#search-results .sm-result");
+            for (var i = 0; i < results.length; i++) {
+              var tEl = results[i].querySelector(".sr-title");
+              if (tEl && tEl.textContent.trim() === headline) { results[i].click(); done = true; break; }
+            }
+            if (!done && results.length) results[0].click();
+          }, 250);
+          return;
+        }
+      }
+      var secId = target.indexOf("area:") === 0 ? target.slice(5) : target;
+      var secBtn = document.querySelector('#sectionmenu [data-section="' + secId + '"]');
+      if (secBtn) { secBtn.click(); return; }
+      if (title) {
+        var input2 = $("search-input");
+        if (input2) {
+          input2.value = title;
+          input2.dispatchEvent(new Event("input", { bubbles: true }));
+          window.setTimeout(function () {
+            var res2 = document.querySelectorAll("#search-results .sm-result");
+            if (res2.length) res2[0].click();
+          }, 250);
+        }
+      }
+    }, 60);
+  }
+  function openNotes() {
+    showMine($("wr7-notes"));
+    notesOpen = true;
+    renderNotes();
+    lsSet(SEEN_KEY, String(Date.now()));
+    window.setTimeout(updateBadge, 30);
+    fetchNotifications();
+  }
+
+  /* ---------- openers + navigation ---------- */
+  function openProfile() {
+    showMine($("wr-profile"));
+    profileOpen = true;
+    prefillDetails();
+    renderSigninRows();
+    renderYourMuseum();
+    syncCalmSwitch();
+    photoMsg("");
+    var sm = $("wr-profile-save-msg"); if (sm) sm.textContent = "";
+  }
+  function navGo(stop) {
+    if (stop !== "rooms") {
+      var menu = $("sectionmenu");
+      if (menu && menu.classList.contains("open")) {
+        menu.classList.remove("open");
+        document.body.classList.remove("menu-open");
+        var mb = $("btn-menu"); if (mb) mb.setAttribute("aria-expanded", "false");
+      }
+    }
+    if (stop === "museum") { var b = $("btn-reset"); if (b) b.click(); }
+    else if (stop === "rooms") { var m = $("btn-menu"); if (m) m.click(); }
+    else if (stop === "passport") { var p = $("wr-btn-passport"); if (p) p.click(); }
+    else if (stop === "updates") { openNotes(); }
+    else if (stop === "profile") { openProfile(); }
+  }
+  function navSync() {
+    var nav = $("wr7-nav");
+    if (!nav) return;
+    var welcome = $("welcome");
+    var inside = !document.body.classList.contains("welcome-open") && welcome && welcome.classList.contains("hidden");
+    var tourbar = $("tourbar");
+    var tourBtn = $("btn-tour");
+    var touring = (tourbar && tourbar.classList.contains("show")) || (tourBtn && tourBtn.classList.contains("active"));
+    var sheetOpen = !!document.querySelector(".wr-sheet.open") ||
+      ($("panel") && $("panel").classList.contains("open")) ||
+      ($("articleview") && $("articleview").classList.contains("open"));
+    document.body.classList.toggle("wr7-navon", !!(inside && !touring && !sheetOpen));
+    var active = "museum";
+    var menu = $("sectionmenu");
+    if (profileOpen) active = "profile";
+    else if (notesOpen) active = "updates";
+    else if ($("wr-pp") && $("wr-pp").classList.contains("open")) active = "passport";
+    else if (menu && menu.classList.contains("open")) active = "rooms";
+    var btns = nav.querySelectorAll(".wr7-navbtn");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle("active", btns[i].getAttribute("data-stop") === active);
+    }
+  }
+
+  /* ---------- menu + passport entry points ---------- */
+  function addEntryPoints() {
+    var menu = $("sectionmenu");
+    if (menu && !$("wr7-menu-profile")) {
+      var after = menu.querySelector("a[href*='passport']");
+      var btn = el("button", "sm-item"); btn.type = "button"; btn.id = "wr7-menu-profile";
+      btn.appendChild(el("span", "sm-ic", "◉"));
+      btn.appendChild(el("span", null, "My Profile"));
+      btn.addEventListener("click", function () {
+        menu.classList.remove("open");
+        document.body.classList.remove("menu-open");
+        var mb = $("btn-menu"); if (mb) mb.setAttribute("aria-expanded", "false");
+        openProfile();
+      });
+      if (after && after.parentNode === menu) menu.insertBefore(btn, after.nextSibling);
+      else menu.appendChild(btn);
+    }
+    var holder = $("wr-pp-holder");
+    if (holder && holder.parentNode && !$("wr7-pp-profile-btn")) {
+      var pb = el("button", "wr-pp-reg-btn ghost", "My Profile & Settings");
+      pb.type = "button"; pb.id = "wr7-pp-profile-btn"; pb.style.margin = "0 0 12px";
+      pb.addEventListener("click", function () { openProfile(); });
+      holder.parentNode.insertBefore(pb, holder.nextSibling);
+    }
+  }
+
+  /* ---------- events ---------- */
+  function wireEvents() {
+    document.addEventListener("click", onEnterIntercept, true);
+
+    $("wr-reg-gate-x").addEventListener("click", proceedThroughGate);
+    $("wr-reg-gate-guest").addEventListener("click", proceedThroughGate);
+    $("wr-reg-gate-send").addEventListener("click", function () {
+      sendSignInLink("wr-reg-gate-email", "wr-reg-gate-msg", $("wr-reg-gate-send"));
+    });
+    $("wr-reg-gate-save").addEventListener("click", function () {
+      saveDetailsFrom("wr-reg-gate");
+      proceedThroughGate();
+    });
+
+    $("wr-profile-x").addEventListener("click", function () { closeMine(); });
+    $("wr7-notes-x").addEventListener("click", function () { closeMine(); });
+    $("wr-profile-photo-btn").addEventListener("click", function () { var f = $("wr-profile-file"); if (f) f.click(); });
+    $("wr-profile-file").addEventListener("change", function () {
+      var f = this.files && this.files[0];
+      onPhotoChosen(f);
+      this.value = "";
+    });
+    $("wr-profile-save").addEventListener("click", function () {
+      saveDetailsFrom("wr-profile");
+      var m = $("wr-profile-save-msg"); if (m) m.textContent = "Saved.";
+      refreshPhotos();
+      renderYourMuseum();
+    });
+    $("wr-profile-calm").addEventListener("click", function () {
+      var on = lsGet(CALM_KEY) === "1";
+      if (on) lsDel(CALM_KEY); else lsSet(CALM_KEY, "1");
+      syncCalmSwitch();
+      if (window.__wrCalmApply) { try { window.__wrCalmApply(); } catch (e) {} }
+    });
+    $("wr-profile-reset").addEventListener("click", function () { onResetPassport(this); });
+
+    hookShareForm();
+    var tries = 0;
+    var iv = window.setInterval(function () {
+      tries++;
+      addEntryPoints();
+      hookShareForm();
+      if (($("wr7-menu-profile") && $("wr7-pp-profile-btn")) || tries > 12) window.clearInterval(iv);
+    }, 700);
+  }
+
+  /* ---------- init ---------- */
+  function init() {
+    buildDom();
+    initSb7();
+    window.setTimeout(fetchNotifications, 2500);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+
+</script>
 </body>
 </html>
