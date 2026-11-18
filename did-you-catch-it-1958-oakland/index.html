@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light" />
+<link rel="icon" href="data:," />
+<title>Did You Catch It? 1958 — Oakland</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: light;
+    --blue:#2041A5;
+    --blue-deep:#2041A5;
+    --gold:#DFB136;
+    --gold-soft:#DFB136;
+    --paper:#f7f1df;
+    --paper-2:#efe6cd;
+    --ink:#1c1a15;
+    --ink-soft:#4c4638;
+    --line:#2041A5;
+    --card:#fffdf4;
+    --wrong:#1c1a15;
+    --wrong-bg:#f7ecd0;
+    --ok-bg:#e8ecf9;
+    --shadow:0 18px 40px rgba(32,65,165,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:Georgia, "Times New Roman", Times, serif;
+    color:var(--ink);
+    background:var(--paper-2);
+    min-height:100dvh;
+    display:flex; justify-content:center;
+    padding:0;
+  }
+  /* ---------- Story frame ---------- */
+  .story{
+    width:100%; max-width:480px; min-height:100dvh;
+    background:
+      radial-gradient(rgba(28,26,21,.055) 1px, transparent 1.1px) 0 0/9px 9px,
+      var(--paper);
+    display:flex; flex-direction:column;
+    box-shadow:var(--shadow);
+    position:relative; overflow:hidden;
+  }
+  @media (min-width:520px){
+    body{padding:22px 12px}
+    .story{min-height:min(880px, calc(100dvh - 44px)); border-radius:6px; border:1px solid rgba(32,65,165,.25)}
+  }
+  /* ---------- Progress (Stories style) ---------- */
+  .progress{display:flex; gap:6px; padding:14px 16px 0}
+  .seg{flex:1; height:4px; border-radius:99px; background:color-mix(in srgb, var(--blue) 18%, transparent); overflow:hidden}
+  .seg i{display:block; height:100%; width:0%; background:var(--blue); transition:width .45s ease}
+  .seg.done i{width:100%}
+  .seg.now i{width:55%}
+  /* ---------- Masthead ---------- */
+  header{padding:14px 20px 0; text-align:center}
+  .rule-top{border-top:3px solid var(--blue); border-bottom:1px solid var(--blue); height:5px; margin:0 2px}
+  .extra{display:none}
+  h1{
+    font-family:"Oswald", "Arial Narrow", sans-serif; font-weight:700; font-stretch:condensed;
+    font-size:clamp(30px, 8.6vw, 42px); line-height:1.04; margin:14px 0 4px; letter-spacing:.01em;
+    text-transform:uppercase; color:var(--blue);
+  }
+  h1 em{font-style:normal; font-weight:700}
+  .rule-gold{
+    border-top:4px solid var(--gold); border-bottom:1.5px solid var(--gold); height:7px; margin:10px 2px 0;
+  }
+  .dateline{
+    font-family:Georgia, "Times New Roman", Times, serif; font-size:12px; font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--ink-soft);
+    display:flex; align-items:center; gap:10px; justify-content:center; margin:10px 0 0;
+  }
+  .dateline::before,.dateline::after{content:""; height:1px; width:34px; background:var(--gold); opacity:1}
+  .lesson{
+    margin:12px auto 0; max-width:340px;
+    font-family:Georgia, "Times New Roman", Times, serif; font-style:italic; font-weight:700;
+    font-size:20px; line-height:1.25; color:var(--blue);
+  }
+  .weekchip{
+    display:inline-block; margin-top:10px;
+    font-family:Georgia, "Times New Roman", Times, serif; font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--paper); background:var(--blue); padding:6px 12px; border-radius:99px; border:1px solid var(--gold);
+  }
+  .rule-bot{border-bottom:3px solid var(--gold); border-top:1px solid var(--gold); height:5px; margin:16px 22px 0}
+  /* ---------- Screens ---------- */
+  main{flex:1; display:flex; flex-direction:column; padding:18px 20px 8px}
+  .screen{display:none; flex-direction:column; flex:1; animation:in .3s ease both}
+  .screen.active{display:flex}
+  @keyframes in{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+  @media (prefers-reduced-motion: reduce){ .screen{animation:none} .seg i{transition:none} }
+  .dek{font-size:16.5px; line-height:1.55; color:var(--ink-soft); text-align:center; margin:6px 4px 0}
+  .dek strong{color:var(--ink)}
+  .byline{
+    text-align:center; font-family:Georgia, "Times New Roman", Times, serif; font-size:11px; font-weight:700;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--ink-soft); margin-top:14px;
+  }
+  .big-btn{
+    margin-top:auto; width:100%; border:1px solid var(--gold); cursor:pointer;
+    font-family:Georgia, "Times New Roman", Times, serif; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    font-size:15px; color:var(--paper); background:var(--blue);
+    padding:17px 18px; border-radius:4px;
+    box-shadow:0 4px 0 var(--gold);
+  }
+  .big-btn:active{transform:translateY(2px); box-shadow:0 2px 0 var(--gold)}
+  .hintline{text-align:center; font-size:13px; color:var(--ink-soft); margin:12px 0 4px; font-style:italic}
+  /* ---------- Questions ---------- */
+  .qcount{
+    font-family:Georgia, "Times New Roman", Times, serif; font-size:11px; font-weight:700; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--blue); text-align:center;
+  }
+  .qtext{
+    font-family:Georgia, "Times New Roman", Times, serif; font-weight:700;
+    font-size:clamp(23px, 6.4vw, 28px); line-height:1.28; text-align:center; margin:10px 2px 20px;
+  }
+  .answers{display:flex; flex-direction:column; gap:11px}
+  .ans{
+    width:100%; text-align:left; cursor:pointer;
+    font-family:Georgia, "Times New Roman", Times, serif; font-size:16.5px; font-weight:600; line-height:1.35;
+    color:var(--ink); background:var(--card);
+    border:2px solid var(--blue); border-radius:4px; padding:15px 16px;
+    display:flex; gap:12px; align-items:flex-start;
+    transition:transform .08s ease, background .15s ease;
+  }
+  .ans:active{transform:scale(.99)}
+  .ans .letter{
+    font-family:Georgia, "Times New Roman", Times, serif; font-weight:700; font-size:12px;
+    border:1.5px solid currentColor; border-radius:50%; width:24px; height:24px; flex:0 0 24px;
+    display:flex; align-items:center; justify-content:center; margin-top:1px;
+  }
+  .ans:disabled{cursor:default; opacity:.55}
+  .ans.correct{opacity:1; background:var(--ok-bg); border-color:var(--blue); color:var(--blue); box-shadow:inset 0 0 0 1px var(--blue)}
+  .ans.wrongpick{opacity:1; background:var(--wrong-bg); border-color:var(--gold); color:var(--ink); box-shadow:inset 0 0 0 1px var(--gold)}
+  .mark{margin-left:auto; font-family:Georgia, "Times New Roman", Times, serif; font-weight:700; font-size:14px; flex:0 0 auto}
+  .explain{
+    display:none; margin-top:16px; border-top:2px solid var(--gold); border-bottom:1px solid var(--gold);
+    padding:12px 4px 13px; font-size:15px; line-height:1.55; text-align:center;
+  }
+  .explain.show{display:block; animation:in .3s ease both}
+  .explain .verdict{font-family:Georgia, "Times New Roman", Times, serif; font-weight:700; font-size:12px; letter-spacing:.16em; text-transform:uppercase; display:block; margin-bottom:5px}
+  .explain .verdict.good{color:var(--blue)}
+  .explain .verdict.miss{color:var(--blue)}
+  .nextwrap{display:none; margin-top:auto; padding-top:16px}
+  .nextwrap.show{display:block}
+  /* ---------- Score card ---------- */
+  .scorebox{
+    border:6px double var(--gold); padding:22px 16px 18px; text-align:center; background:var(--blue); color:var(--paper); margin-top:6px;
+  }
+  .scorebox .caught{
+    font-family:Georgia, "Times New Roman", Times, serif; font-size:11px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--gold);
+  }
+  .bignum{font-family:Georgia, "Times New Roman", Times, serif; font-weight:700; font-size:64px; line-height:1; margin:8px 0 2px; color:var(--paper)}
+  .bignum small{font-size:30px; color:var(--gold)}
+  .scoreline{font-size:16px; line-height:1.5; margin:8px 6px 0; color:var(--paper)}
+  .stars{color:var(--gold); font-size:19px; letter-spacing:5px; margin-top:8px}
+  .rowbtns{display:flex; gap:10px; margin-top:16px}
+  .rowbtns .big-btn{margin-top:0; background:var(--gold); color:var(--blue); border-color:var(--paper); box-shadow:0 4px 0 var(--paper)}
+  .rowbtns .big-btn:active{box-shadow:0 2px 0 var(--paper)}
+  .ghost-btn{
+    flex:1; cursor:pointer; font-family:Georgia, "Times New Roman", Times, serif; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    font-size:14px; color:var(--paper); background:transparent; border:2px solid var(--gold); border-radius:4px; padding:15px 10px;
+  }
+  .scorebox .copynote{color:var(--paper)}
+  .copynote{min-height:18px; text-align:center; font-size:13px; font-style:italic; color:var(--ink-soft); margin-top:10px}
+  .teaser{
+    margin-top:18px; text-align:center; border:2px solid var(--gold); outline:1px solid var(--blue); padding:13px 12px;
+    font-family:Georgia, "Times New Roman", Times, serif; font-size:17px; line-height:1.35; color:var(--blue); background:var(--paper);
+  }
+  .teaser span{display:block; font-family:Georgia, "Times New Roman", Times, serif; font-size:10.5px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--blue); margin-bottom:4px}
+  footer{padding:6px 22px 20px; text-align:center}
+  .credit{font-size:12px; line-height:1.55; color:var(--ink-soft); border-top:1px solid var(--gold); padding-top:12px; margin:0}
+  .credit strong{color:var(--ink)}
+</style>
+<style id="wr-modern-fonts">
+  * { font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif !important; }
+  h1, h2, h3, [class*="title"], [class*="headline"], [class*="masthead"] {
+    font-family: 'Lemon/Milk', 'LEMON MILK', 'Bebas Neue', 'Poppins', sans-serif !important;
+    letter-spacing: .03em;
+  }
+  h4, h5, h6, button, .btn, a.btn, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"] {
+    font-family: 'Bebas Neue', 'Lemon/Milk', 'LEMON MILK', 'Poppins', sans-serif !important;
+    letter-spacing: .07em;
+  }
+</style>
+</head>
+<body>
+<div class="story">
+  <div class="progress" id="progress" aria-hidden="true">
+    <div class="seg" data-seg="0"><i></i></div>
+    <div class="seg" data-seg="1"><i></i></div>
+    <div class="seg" data-seg="2"><i></i></div>
+    <div class="seg" data-seg="3"><i></i></div>
+  </div>
+
+  <header>
+    <div class="rule-top"></div>
+    <h1>EXTRA! EXTRA! —<br>Did You Catch It?</h1>
+    <div class="rule-gold" aria-hidden="true"></div>
+    <p class="dateline">1958 · Oakland Tribune · Oakland</p>
+    <p class="lesson">&ldquo;The Soror Who Spoke to the Moment&rdquo;</p>
+    <span class="weekchip">Week 4 of 5 · Stories Series</span>
+    <div class="rule-bot"></div>
+  </header>
+
+  <main>
+    <!-- INTRO -->
+    <section class="screen active" id="screen-intro">
+      <p class="dek">In 1958, the <strong>Oakland Tribune</strong> carried the name <strong>Sally N. Edwards</strong> — a soror speaking to the whole city. Three quick questions from the article. Tap through in under a minute.</p>
+      <p class="byline">From the History &amp; Archives Files</p>
+      <button class="big-btn" id="startBtn" type="button">Start — Question 1</button>
+      <p class="hintline">One question per tap, just like Stories.</p>
+    </section>
+
+    <!-- QUESTIONS injected by JS -->
+    <div id="qmount"></div>
+
+    <!-- SCORE -->
+    <section class="screen" id="screen-score">
+      <div class="scorebox">
+        <span class="caught">You Caught</span>
+        <div class="bignum"><span id="scoreNum">0</span><small> / 3</small></div>
+        <div class="stars" id="scoreStars" aria-hidden="true">☆☆☆</div>
+        <p class="scoreline" id="scoreLine">I caught 0 of 3 — 1958, Oakland · Mighty Western Region history</p>
+        <div class="rowbtns">
+          <button class="big-btn" id="copyBtn" type="button" style="flex:1.2">Copy Score</button>
+          <button class="ghost-btn" id="againBtn" type="button">Play Again</button>
+        </div>
+        <p class="copynote" id="copyNote" role="status"></p>
+      </div>
+      <div class="teaser"><span>Next Week</span>Next week: 1964, Berkeley</div>
+    </section>
+  </main>
+
+  <footer>
+    <p class="credit">Brought to you by the Epistoleus and the History &amp; Archives Committee, Sigma Gamma Rho Sorority, Inc., Western Region.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var QUESTIONS = [
+    {
+      q: "What was Sally N. Edwards speaking on in Oakland in 1958?",
+      correct: "Race relations",
+      wrong: ["Founders Day history", "Scholarship fundraising"],
+      explain: "Edwards addressed race relations in her 1958 Oakland appearance."
+    },
+    {
+      q: "Edwards sat on the executive board of which national body?",
+      correct: "The National Council of Negro Women",
+      wrong: ["The NAACP", "The Urban League"],
+      explain: "Edwards served on the executive board of the National Council of Negro Women."
+    },
+    {
+      q: "Was the 1958 article about a Founders Day program?",
+      correct: "No — it was a public lecture, printed the day before Founders Day",
+      wrong: ["Yes, a full Founders Day program", "It announced a tea"],
+      explain: "The article covered a public lecture, printed the day before Founders Day."
+    }
+  ];
+
+  var mount = document.getElementById('qmount');
+  var score = 0, current = 0, answered = false;
+
+  function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+
+  QUESTIONS.forEach(function(item, idx){
+    var sec = document.createElement('section');
+    sec.className = 'screen'; sec.id = 'screen-q' + idx;
+    var opts = shuffle([{t:item.correct, ok:true}].concat(item.wrong.map(function(w){return {t:w, ok:false};})));
+    var letters = ['A','B','C'];
+    var answersHtml = opts.map(function(o,i){
+      return '<button type="button" class="ans" data-ok="'+(o.ok?'1':'0')+'"><span class="letter">'+letters[i]+'</span><span>'+o.t+'</span><span class="mark"></span></button>';
+    }).join('');
+    sec.innerHTML =
+      '<p class="qcount">Question '+(idx+1)+' of 3</p>'+
+      '<h2 class="qtext">'+item.q+'</h2>'+
+      '<div class="answers">'+answersHtml+'</div>'+
+      '<div class="explain" role="status"><span class="verdict"></span><span class="etext"></span></div>'+
+      '<div class="nextwrap"><button type="button" class="big-btn nextBtn">'+(idx===2?'See My Score':'Next Question')+'</button></div>';
+    mount.appendChild(sec);
+
+    var buttons = sec.querySelectorAll('.ans');
+    buttons.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (answered) return;
+        answered = true;
+        var isOk = btn.getAttribute('data-ok') === '1';
+        if (isOk) score++;
+        buttons.forEach(function(b){
+          b.disabled = true;
+          if (b.getAttribute('data-ok') === '1'){ b.classList.add('correct'); b.querySelector('.mark').textContent = '✓'; }
+        });
+        if (!isOk){ btn.classList.add('wrongpick'); btn.querySelector('.mark').textContent = '✕'; }
+        var ex = sec.querySelector('.explain');
+        var v = ex.querySelector('.verdict');
+        v.textContent = isOk ? 'You caught it!' : 'Not quite — here it is:';
+        v.className = 'verdict ' + (isOk ? 'good' : 'miss');
+        ex.querySelector('.etext').textContent = item.explain;
+        ex.classList.add('show');
+        sec.querySelector('.nextwrap').classList.add('show');
+        setSeg(idx+1, true);
+      });
+    });
+    sec.querySelector('.nextBtn').addEventListener('click', function(){ goTo(idx+1); });
+  });
+
+  var screens = { intro: document.getElementById('screen-intro'), score: document.getElementById('screen-score') };
+  function setSeg(i, done){
+    document.querySelectorAll('.seg').forEach(function(s){
+      var n = parseInt(s.getAttribute('data-seg'),10);
+      s.classList.toggle('done', n < i || (n === i && done));
+      s.classList.toggle('now', n === i && !done);
+    });
+  }
+  function show(el){
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+    el.classList.add('active');
+    window.scrollTo(0,0);
+  }
+  function goTo(step){ // step: 0..2 questions, 3 = score
+    answered = false;
+    if (step <= 2){ current = step; show(document.getElementById('screen-q'+step)); setSeg(step+1, false); }
+    else { finish(); }
+  }
+  function finish(){
+    document.getElementById('scoreNum').textContent = score;
+    document.getElementById('scoreLine').textContent = 'I caught ' + score + ' of 3 — 1958, Oakland · Mighty Western Region history';
+    document.getElementById('scoreStars').textContent = (score===3 ? '★★★' : score===2 ? '★★☆' : score===1 ? '★☆☆' : '☆☆☆');
+    document.getElementById('copyNote').textContent = '';
+    show(screens.score); setSeg(3, true);
+    document.querySelectorAll('.seg').forEach(function(s){ s.classList.add('done'); s.classList.remove('now'); });
+  }
+
+  document.getElementById('startBtn').addEventListener('click', function(){ goTo(0); });
+  setSeg(0, false);
+
+  document.getElementById('againBtn').addEventListener('click', function(){
+    score = 0;
+    // rebuild question screens for a fresh shuffle + clean state
+    mount.innerHTML = '';
+    location.reload();
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', function(){
+    var text = document.getElementById('scoreLine').textContent;
+    var note = document.getElementById('copyNote');
+    function done(){ note.textContent = 'Copied — paste it anywhere to share your score.'; }
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); }
+      catch(e){ note.textContent = text; }
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else { fallback(); }
+  });
+})();
+</script>
+</body>
+</html>

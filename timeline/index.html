@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>The Journey West — Western Region History Timeline</title>
+<meta name="description" content="The Journey West: an interactive timeline of how Sigma Gamma Rho's Western Region was established, from 1939 to 2013." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --navy: #14297a;
+    --navy-deep: #111e4d;
+    --ink: #0a1330;
+    --gold: #c79a3d;
+    --gold-l: #e9c75e;
+    --gold-soft: #d9b64a;
+    --cream: #f7f0dc;
+    --cream-dim: #e6dfc9;
+    --card-w: 520px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    overflow: hidden;
+    height: 100dvh;
+    color: var(--cream);
+    background:
+      radial-gradient(1100px 700px at 18% -10%, rgba(35, 64, 168, .55), transparent 60%),
+      radial-gradient(900px 650px at 105% 110%, rgba(35, 64, 168, .45), transparent 60%),
+      radial-gradient(closest-side at 50% 45%, #16265f, var(--navy-deep) 62%, var(--ink));
+    font-family: "Poppins", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .serif { font-family: "Cormorant Garamond", Didot, Georgia, "Times New Roman", serif; }
+  .display { font-family: "Bebas Neue", "Poppins", sans-serif; }
+
+  /* ======================= HEADER ======================= */
+  header.topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+    display: flex; align-items: center; gap: 16px;
+    padding: 10px 20px;
+    background: linear-gradient(180deg, rgba(9, 17, 45, .95), rgba(9, 17, 45, .82));
+    border-bottom: 1px solid rgba(233, 199, 94, .45);
+    backdrop-filter: blur(6px);
+  }
+  header.topbar img.logo { height: 46px; width: auto; display: block; }
+  header.topbar .brand { min-width: 0; }
+  header.topbar .brand .b-title {
+    font-family: "Playfair Display", Didot, Georgia, serif;
+    font-size: 21px; font-weight: 700; letter-spacing: .04em; color: var(--cream);
+    white-space: nowrap; line-height: 1.1;
+  }
+  header.topbar .brand .b-sub {
+    font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--gold-l);
+    white-space: nowrap; margin-top: 3px;
+  }
+  header.topbar .spacer { flex: 1; }
+  header.topbar a.archive-link {
+    color: var(--cream); text-decoration: none; font-size: 12px; letter-spacing: .14em;
+    text-transform: uppercase; border: 1px solid rgba(233, 199, 94, .6); border-radius: 999px;
+    padding: 8px 14px; white-space: nowrap; transition: background .15s ease, color .15s ease;
+  }
+  header.topbar a.archive-link:hover { background: rgba(233, 199, 94, .16); }
+
+  /* ======================= STAGE / PLANE ======================= */
+  #stage { position: fixed; inset: 0; overflow: hidden; }
+  #plane {
+    position: absolute; left: 0; top: 0;
+    width: 3640px; height: 2560px;
+    transform-origin: 0 0;
+    will-change: transform;
+    transition: transform 1.25s cubic-bezier(.68, .02, .22, 1);
+    background-image:
+      radial-gradient(rgba(233, 199, 94, .16) 1.5px, transparent 1.6px),
+      radial-gradient(700px 460px at 900px 700px, rgba(199, 154, 61, .13), transparent 70%),
+      radial-gradient(760px 520px at 2750px 1750px, rgba(199, 154, 61, .11), transparent 70%),
+      radial-gradient(620px 420px at 1900px 350px, rgba(64, 96, 205, .16), transparent 70%);
+    background-size: 46px 46px, auto, auto, auto;
+  }
+  #plane.no-anim { transition: none !important; }
+  #pathSvg { position: absolute; inset: 0; width: 3640px; height: 2560px; pointer-events: none; }
+  #pathSvg .route {
+    fill: none; stroke: var(--gold); stroke-width: 4;
+    stroke-dasharray: 3 14; stroke-linecap: round; opacity: .55;
+  }
+  #pathSvg .node { fill: var(--navy-deep); stroke: var(--gold-l); stroke-width: 3; }
+
+  /* ======================= STOP CARDS ======================= */
+  .card {
+    position: absolute; width: var(--card-w);
+    transform: translate(-50%, -50%);
+    background: linear-gradient(165deg, #20398c, #172a68 58%, #122153);
+    border: 1px solid rgba(233, 199, 94, .5);
+    border-radius: 18px;
+    padding: 30px 36px 32px;
+    box-shadow: 0 24px 50px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .08);
+    opacity: .38;
+    cursor: pointer;
+    transition: opacity .8s ease, border-color .8s ease, box-shadow .8s ease;
+  }
+  .card::before {
+    content: ""; position: absolute; inset: 9px; border: 1px solid rgba(233, 199, 94, .22);
+    border-radius: 12px; pointer-events: none;
+  }
+  .card.active {
+    opacity: 1; cursor: default;
+    border-color: var(--gold-l);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, .55), 0 0 0 1px rgba(233, 199, 94, .35),
+      0 0 64px rgba(233, 199, 94, .22), inset 0 1px 0 rgba(255, 255, 255, .12);
+  }
+  .card .year {
+    font-family: "Playfair Display", Didot, Georgia, serif;
+    font-size: 60px; font-weight: 700; line-height: 1; color: var(--gold-l);
+    letter-spacing: .015em; margin: 0;
+  }
+  .card .area {
+    display: inline-block; margin-top: 14px;
+    font-size: 11px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--gold-l); border: 1px solid rgba(233, 199, 94, .65); border-radius: 999px;
+    padding: 5px 12px 4px;
+  }
+  .card h2 {
+    font-family: "Playfair Display", Didot, Georgia, serif;
+    font-size: 28px; font-weight: 700; line-height: 1.22; color: var(--cream);
+    margin: 14px 0 10px;
+  }
+  .card p { font-size: 16.5px; line-height: 1.62; color: var(--cream-dim); margin: 0; }
+  .card .stopno {
+    position: absolute; top: 22px; right: 28px;
+    font-size: 11px; letter-spacing: .2em; color: rgba(247, 240, 220, .55); text-transform: uppercase;
+  }
+
+  /* end card */
+  .card.end { text-align: center; padding: 40px 40px 42px; }
+  .card.end .end-kicker {
+    font-size: 11.5px; letter-spacing: .26em; text-transform: uppercase; color: var(--gold-l);
+  }
+  .card.end h2 { font-size: 36px; margin: 12px 0 14px; }
+  .card.end .credit { font-size: 14.5px; line-height: 1.65; color: var(--cream-dim); margin: 0 auto 26px; max-width: 42em; }
+  .card.end .end-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; text-decoration: none; border-radius: 10px;
+    font-size: 15px; font-weight: 600; letter-spacing: .05em; padding: 14px 24px;
+    transition: transform .12s ease, background .15s ease;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-gold {
+    background: linear-gradient(180deg, #e9c95c, var(--gold-soft) 55%, #c9a227);
+    color: #241a02; border: 1px solid #f0d98a;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .55);
+  }
+  .btn-outline {
+    background: rgba(255, 255, 255, .04); color: var(--cream);
+    border: 1px solid rgba(239, 210, 126, .65);
+  }
+
+  /* ======================= OVERVIEW OVERLAY ======================= */
+  #overview {
+    position: fixed; inset: 0; z-index: 30;
+    display: flex; align-items: center; justify-content: center;
+    padding: 88px 18px 126px;
+    background: radial-gradient(ellipse at center, rgba(8, 15, 40, .42), rgba(8, 15, 40, .78));
+    opacity: 1; transition: opacity .55s ease;
+  }
+  #overview.hidden { opacity: 0; pointer-events: none; }
+  #overview .panel {
+    max-width: 700px; width: 100%; text-align: center;
+    background: rgba(13, 24, 64, .92);
+    border: 1px solid rgba(233, 199, 94, .6); border-radius: 22px;
+    box-shadow: 0 34px 80px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .08);
+    padding: 32px 44px 28px;
+    max-height: 100%; overflow-y: auto;
+  }
+  #overview .eyebrow {
+    font-size: 11.5px; letter-spacing: .3em; text-transform: uppercase; color: var(--gold-l); margin: 0;
+  }
+  #overview h1 {
+    font-family: "Playfair Display", Didot, Georgia, serif;
+    font-size: 50px; line-height: 1.05; margin: 12px 0 6px; color: var(--cream); font-weight: 700;
+  }
+  #overview .subtitle {
+    font-family: Georgia, "Times New Roman", serif; font-style: italic;
+    font-size: 19px; color: var(--cream-dim); margin: 0;
+  }
+  #overview .scope {
+    font-family: "Bebas Neue", "Poppins", sans-serif;
+    font-size: 16px; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--gold-l); margin: 12px 0 0;
+  }
+  #overview .shoulders {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 21px; color: var(--gold-l); margin: 16px 0 0; letter-spacing: .02em;
+  }
+  #overview .welcome { font-size: 15.5px; line-height: 1.58; color: var(--cream-dim); margin: 10px auto 0; max-width: 34em; }
+  #overview .chips {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px auto 0; max-width: 560px;
+  }
+  #overview .chip {
+    font: inherit; cursor: pointer; text-align: center;
+    background: rgba(255, 255, 255, .04); color: var(--cream);
+    border: 1px solid rgba(233, 199, 94, .6); border-radius: 12px;
+    padding: 11px 10px; font-size: 14.5px; font-weight: 600; letter-spacing: .03em;
+    transition: background .15s ease, transform .12s ease;
+  }
+  #overview .chip small { display: block; font-weight: 400; font-size: 11.5px; color: #b9c6ee; letter-spacing: .08em; margin-top: 3px; text-transform: uppercase; }
+  #overview .chip:hover { background: rgba(233, 199, 94, .16); transform: translateY(-1px); }
+  #overview .begin {
+    margin-top: 18px; font-size: 16px; padding: 13px 32px; border: none; cursor: pointer; font-family: inherit;
+  }
+  #overview .credit-line {
+    margin: 18px auto 0; font-size: 12px; line-height: 1.6; color: rgba(230, 223, 201, .62); max-width: 44em;
+  }
+
+  /* ======================= SCRUBBER ======================= */
+  #scrubber {
+    position: fixed; left: 0; right: 0; bottom: 74px; z-index: 35;
+    overflow-x: auto; overflow-y: hidden;
+    padding: 10px 18px 4px;
+    scrollbar-width: thin; scrollbar-color: rgba(233, 199, 94, .5) transparent;
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  }
+  #scrubber .track {
+    position: relative; display: flex; align-items: flex-start; gap: 2px;
+    width: max-content; margin: 0 auto; padding: 0 8px;
+  }
+  #scrubber .track::before {
+    content: ""; position: absolute; left: 12px; right: 12px; top: 7px; height: 2px;
+    background: linear-gradient(90deg, rgba(233, 199, 94, .15), rgba(233, 199, 94, .5), rgba(233, 199, 94, .15));
+  }
+  .dot {
+    position: relative; flex: 0 0 auto; width: 58px;
+    background: none; border: none; cursor: pointer; padding: 0 0 2px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    font-family: inherit;
+  }
+  .dot .pip {
+    width: 15px; height: 15px; border-radius: 50%;
+    background: var(--navy-deep); border: 2px solid rgba(233, 199, 94, .75);
+    transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+  }
+  .dot .yr { font-size: 11.5px; letter-spacing: .06em; color: rgba(247, 240, 220, .72); white-space: nowrap; }
+  .dot:hover .pip { transform: scale(1.2); }
+  .dot.active .pip { background: var(--gold-l); transform: scale(1.3); box-shadow: 0 0 14px rgba(233, 199, 94, .65); }
+  .dot.active .yr { color: var(--gold-l); font-weight: 700; }
+  .dot.done .pip { background: rgba(199, 154, 61, .8); }
+
+  /* ======================= CONTROLS ======================= */
+  #controls {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 36;
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
+    background: linear-gradient(0deg, rgba(9, 17, 45, .94), rgba(9, 17, 45, .66) 75%, transparent);
+  }
+  .ctl {
+    font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(20, 41, 122, .85); color: var(--cream);
+    border: 1px solid rgba(233, 199, 94, .6); border-radius: 999px;
+    padding: 10px 20px; font-size: 14.5px; font-weight: 600; letter-spacing: .04em;
+    transition: background .15s ease, opacity .15s ease, transform .12s ease;
+  }
+  .ctl:hover:not(:disabled) { background: rgba(35, 64, 168, .9); transform: translateY(-1px); }
+  .ctl:disabled { opacity: .38; cursor: default; }
+  .ctl svg { width: 15px; height: 15px; fill: var(--gold-l); flex: 0 0 auto; }
+  .ctl.overview-btn { padding: 10px 16px; }
+  #progress {
+    min-width: 118px; text-align: center;
+    font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold-l);
+  }
+
+
+
+  /* ======================= SITE TYPE SYSTEM (matches museum + quiz) ======================= */
+  header.topbar .brand .b-title, #overview h1, .card .year, .card h2, .card .end-kicker,
+  .btn, .ctl, #progress, .dot .yr, #overview .chip, #lightbox .lb-btn, #lightbox .lb-count {
+    font-family: "Bebas Neue", "Poppins", sans-serif; font-weight: 400; letter-spacing: .09em;
+  }
+  #overview h1 { letter-spacing: .05em; }
+  .card .year { letter-spacing: .06em; }
+  #overview .subtitle, #overview .shoulders { font-family: "Cormorant Garamond", Georgia, serif; }
+  .card .stopno, .card .area { font-family: "Poppins", sans-serif; letter-spacing: .16em; }
+  #scrubber { background: rgba(9, 17, 45, .86); backdrop-filter: blur(10px); }
+  #controls { backdrop-filter: blur(10px); }
+
+  /* ======================= PHOTOS ON STOPS ======================= */
+  .card .pics { display: flex; gap: 8px; margin-top: 12px; }
+  .card .pics button {
+    flex: 1 1 0; padding: 0; border: 2px solid rgba(233, 199, 94, .55); border-radius: 8px;
+    overflow: hidden; cursor: pointer; background: #0a1440; line-height: 0;
+    transition: border-color .15s ease, transform .12s ease;
+  }
+  .card .pics button:hover { border-color: var(--gold-l); transform: translateY(-1px); }
+  .card .pics img { width: 100%; height: 120px; object-fit: contain; background: #0a1440; display: block; }
+  .card .pichint {
+    margin: 8px 0 0 !important; font-size: 12px !important; letter-spacing: .05em;
+    color: rgba(233, 199, 94, .85) !important; text-transform: uppercase; font-weight: 600;
+  }
+  .card.dim { opacity: .3; }
+  #scrubber { background: rgba(9, 17, 45, .93); border-top: 1px solid rgba(233, 199, 94, .35); }
+
+
+  /* ======================= LIGHTBOX ======================= */
+  #lightbox {
+    position: fixed; inset: 0; z-index: 80; display: none;
+    background: rgba(5, 9, 26, .94); align-items: center; justify-content: center;
+    flex-direction: column; padding: 18px 14px calc(18px + env(safe-area-inset-bottom));
+  }
+  #lightbox.open { display: flex; }
+  #lightbox figure { margin: 0; max-width: min(880px, 94vw); text-align: center; }
+  #lightbox img {
+    max-width: 100%; max-height: 68vh; border: 3px solid rgba(233, 199, 94, .75);
+    border-radius: 10px; box-shadow: 0 24px 60px rgba(0,0,0,.6); background: #0a1440;
+  }
+  #lightbox figcaption { margin-top: 12px; color: var(--cream); font-size: 15.5px; line-height: 1.5; }
+  #lightbox .lb-count { margin-top: 4px; color: rgba(233,199,94,.85); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+  #lightbox .lb-row { display: flex; gap: 10px; margin-top: 14px; }
+  #lightbox .lb-btn {
+    font: inherit; cursor: pointer; background: rgba(20, 41, 122, .9); color: var(--cream);
+    border: 1px solid rgba(233, 199, 94, .6); border-radius: 999px; padding: 10px 20px;
+    font-size: 14px; font-weight: 600; letter-spacing: .04em;
+  }
+  #lightbox .lb-btn:hover { background: rgba(35, 64, 168, .95); }
+  #lightbox .lb-close {
+    position: absolute; top: calc(12px + env(safe-area-inset-top)); right: 14px;
+    width: 44px; height: 44px; border-radius: 50%; padding: 0; font-size: 20px; line-height: 1;
+  }
+
+  /* ======================= SMALL SCREENS ======================= */
+  @media (max-width: 640px) {
+    header.topbar { padding: 6px 10px; gap: 8px; }
+    header.topbar img.logo { height: 26px; }
+    header.topbar .brand { overflow: hidden; }
+    header.topbar .brand .b-title { font-size: 15px; letter-spacing: .12em; }
+    header.topbar .brand .b-sub { display: none; }
+    header.topbar a.archive-link { font-size: 9px; padding: 6px 9px; letter-spacing: .08em; }
+    #overview { padding: 64px 10px 118px; }
+    #overview .panel { padding: 20px 14px 16px; border-radius: 18px; }
+    #overview h1 { font-size: 34px; }
+    #overview .subtitle { font-size: 16.5px; }
+    #overview .scope { font-size: 13.5px; margin-top: 9px; }
+    #overview .shoulders { font-size: 18px; margin-top: 10px; }
+    #overview .welcome { font-size: 13.5px; line-height: 1.5; margin-top: 8px; }
+    #overview .chips { grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 14px; }
+    #overview .chip { font-size: 13px; padding: 8px 4px; }
+    #overview .chip small { font-size: 9.5px; }
+    #overview .begin { margin-top: 14px; font-size: 16px; padding: 12px 26px; width: 100%; }
+    #overview .credit-line { margin-top: 12px; font-size: 10.5px; }
+    #scrubber { bottom: calc(62px + env(safe-area-inset-bottom)); padding: 6px 10px 2px; }
+    .dot { width: 38px; }
+    .dot .pip { width: 11px; height: 11px; }
+    .dot .yr { display: none; }
+    .dot.active .yr { display: block; font-size: 10.5px; }
+    #controls { gap: 8px; padding: 8px 10px calc(10px + env(safe-area-inset-bottom)); }
+    #progress { min-width: 56px; font-size: 11px; letter-spacing: .12em; }
+    .ctl { padding: 9px 14px; font-size: 14px; gap: 6px; }
+    .ctl.overview-btn { padding: 9px 13px; }
+    #prevBtn, #nextBtn { width: 44px; height: 44px; padding: 0; border-radius: 50%; justify-content: center; flex: 0 0 auto; }
+    #prevBtn span, #nextBtn span { display: none; }
+    #prevBtn svg, #nextBtn svg { width: 17px; height: 17px; }
+    .card p { font-size: 16px; }
+    .card .pics img { height: 92px; }
+    #lightbox img { max-height: 60vh; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #plane { transition: none !important; }
+    #overview { transition: none !important; }
+    .card, .dot .pip, .ctl, .btn, #overview .chip { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <img class="logo" src="wst-gold.png" alt="We Sigma Together — Western Region" />
+  <div class="brand">
+    <div class="b-title">The Journey West</div>
+    <div class="b-sub">Western Region History Timeline</div>
+  </div>
+  <div class="spacer"></div>
+  <a class="archive-link" href="../">Back to the Archive</a>
+</header>
+
+<div id="stage" aria-label="Interactive timeline canvas">
+  <div id="plane">
+    <svg id="pathSvg" viewBox="0 0 3640 2560" preserveAspectRatio="none" aria-hidden="true"></svg>
+    <div id="cards"></div>
+  </div>
+</div>
+
+<section id="overview" aria-label="Timeline overview">
+  <div class="panel">
+    <p class="eyebrow">Sigma Gamma Rho Sorority, Inc. &middot; Western Region</p>
+    <h1>The Journey West</h1>
+    <p class="subtitle">Establishing Sigma Gamma Rho&rsquo;s Western Region</p>
+    <p class="scope">The Northern California Journey</p>
+    <p class="shoulders">Standing on the shoulders of greater.</p>
+    <p class="welcome">Walk the timeline from 1939 to 2013, and see how sorors in the West built one unified region, chapter by chapter.</p>
+    <div class="chips">
+      <button class="chip" type="button" data-goto="2">Forming the Region<small>Begins 1946</small></button>
+      <button class="chip" type="button" data-goto="3">San Francisco Bay Area<small>Begins 1947</small></button>
+      <button class="chip" type="button" data-goto="10">San Jose / Silicon Valley<small>Begins 1973</small></button>
+      <button class="chip" type="button" data-goto="12">Sacramento Area<small>Begins 1984</small></button>
+    </div>
+    <button class="btn btn-gold begin" id="beginBtn" type="button">Begin the Journey &rarr;</button>
+    <p class="credit-line">Brought to you by the Epistoleus and the History &amp; Archives Committee, Sigma Gamma Rho Sorority, Inc., Western Region</p>
+  </div>
+</section>
+
+
+<div id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
+  <button class="lb-btn lb-close" id="lbClose" type="button" aria-label="Close photo viewer">&times;</button>
+  <figure>
+    <img id="lbImg" src="" alt="" />
+    <figcaption id="lbCap"></figcaption>
+    <div class="lb-count" id="lbCount"></div>
+  </figure>
+  <div class="lb-row">
+    <button class="lb-btn" id="lbPrev" type="button">&larr; Prev photo</button>
+    <button class="lb-btn" id="lbNext" type="button">Next photo &rarr;</button>
+  </div>
+</div>
+
+<nav id="scrubber" aria-label="Timeline stops"></nav>
+
+<div id="controls">
+  <button class="ctl" id="prevBtn" type="button" aria-label="Previous stop">
+    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 2 L4.5 8 L10.5 14 Z"/></svg>
+    <span>Prev</span>
+  </button>
+  <button class="ctl overview-btn" id="overviewBtn" type="button">Overview</button>
+  <div id="progress" role="status">Overview</div>
+  <button class="ctl" id="nextBtn" type="button" aria-label="Next stop">
+    <span>Next</span>
+    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 2 L11.5 8 L5.5 14 Z"/></svg>
+  </button>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- Stop data (index 0 = overview, 20 = end card) ---------------- */
+  var STOPS = [
+    { type: "overview" },
+    { year: "1939", title: "Sigma Sigma Is Organized", area: "Los Angeles", x: 420,  y: 360,
+      text: "Sigma Sigma, the Los Angeles Alumnae Chapter, is organized. It serves as the pinnacle for the Western Region, producing a number of regional and national serving leaders." },
+    { year: "1946", title: "The Far Western Region Begins", area: "Forming the Region", x: 1120, y: 326,
+      text: "The Far Western Region received preliminary establishment. Before this, sorors in the western United States were part of the Southwest Region." },
+    { year: "1947", title: "Beta Theta Sigma", area: "San Francisco Bay Area", x: 1820, y: 394,
+      text: "The cornerstone of the Bay Area, chartered November 30, 1947 through the pioneering efforts of Soror Evelyn Coleman Draper and Soror Marie A. Ivey, under the supervision of Regional Syntaktes Soror Lessie B. Crosland." },
+    { year: "1951", title: "The Region Hosts the Boule", area: "Forming the Region", x: 2520, y: 326,
+      text: "The Far Western Region hosted the Boule for the first time, August 15\u201318, 1951. Sigma Sigma and Alpha Nu Sigma of Los Angeles Metro were the host chapters. Lessie B. Crosland served as the region's first Syntaktes, instrumental in organizing many chapters across the region." },
+    { year: "1952", title: "Established at the 22nd Boule", area: "Forming the Region", x: 3220, y: 360,
+      text: "The 22nd Boule in Cleveland, Ohio established the Far Western Region. Soror Sallie Parham Edwards was serving as Grand Basileus." },
+    { year: "1953", title: "First Regional Conference", area: "Phoenix, Arizona", x: 3220, y: 980,
+      text: "The first Regional Conference was held July 17\u201319, 1953 in Phoenix, Arizona, where Beta Mu Sigma was the host chapter." },
+    { year: "1955", title: "Gamma Zeta Sigma", area: "San Francisco Bay Area", x: 2520, y: 1014,
+      text: "On July 1, 1955, at the home of Soror Hattie Washington in San Francisco, Gamma Zeta Sigma graduate chapter was organized by Soror Lessie Crosland, Regional Syntaktes \u2014 a long wish of the Bay Area sorors come true. (From The Aurora, September 1955.)" },
+    { year: "1958", title: "Beta Psi, UC Berkeley", area: "San Francisco Bay Area", x: 1820, y: 946,
+      text: "Beta Psi was organized as a Bay Area city-wide undergraduate chapter on January 18, 1958, by Soror Evelyn Draper with Beta Theta Sigma members Sorors Lillie Wilkes and Everlena Donnelly. Xi Delta, Xi Epsilon, Pi Phi and Sigma Omicron all came from Beta Psi." },
+    { year: "1961", title: "The Western Region", area: "Forming the Region", x: 1120, y: 1014,
+      text: "At the 27th Boule in Philadelphia, the Far Western Region officially became the Western Region. Dr. Lorraine A. Williams was serving as Grand Basileus." },
+    { year: "1973", title: "Epsilon Omicron, San Jose State", area: "San Jose / Silicon Valley", x: 420, y: 980,
+      text: "Epsilon Omicron was chartered at San Jose State University on June 2, 1973 \u2014 the third Black collegiate sorority on campus. Soror Gertrude B. Davis, who chartered Beta Theta Sigma, was a co-organizer and advisor." },
+    { year: "1978", title: "Epsilon Omicron Sigma", area: "San Jose / Silicon Valley", x: 420, y: 1600,
+      text: "Epsilon Omicron Sigma was organized on April 9, 1978. Charter members Anita M. Broach, Janet Dyson, Stephanie A. McMillan, Carol A. Torrence Butler, Felicia Ward, and Linda J. Malbrough were all graduates of San Jose State University." },
+    { year: "1984", title: "Kappa Phi, UC Davis", area: "Sacramento Area", x: 1120, y: 1566,
+      text: "Kappa Phi was chartered on April 29, 1984 as a Sacramento city-wide chapter for undergraduate members. Soror Theresa Ann Roberson led the organizing efforts, supported by her Sigma mentor, Soror Matilda Gresham." },
+    { year: "1988", title: "Eta Alpha Sigma", area: "Sacramento Area", x: 1820, y: 1634,
+      text: "Eta Alpha Sigma was chartered on September 28, 1988 to serve Sacramento, Davis, and Chico. It was later reactivated in 2000." },
+    { year: "1994", title: "Nu Omega, Chico State", area: "Sacramento Area", x: 2520, y: 1566,
+      text: "Nu Omega was chartered on March 27, 1994, under Syntaktes Gwennette Parker and Undergraduate Chapter Coordinator Ursula A. Hill-McKnight." },
+    { year: "1994", title: "Xi Delta, Stanford", area: "San Jose / Silicon Valley", x: 3220, y: 1600,
+      text: "Xi Delta was chartered on May 21, 1994 by seven students, a year after Soror Susan Salcedo was initiated at Stanford in the spring of 1993." },
+    { year: "1994", title: "Xi Epsilon, Sacramento State", area: "Sacramento Area", x: 3220, y: 2220,
+      text: "Xi Epsilon was chartered on May 21, 1994, sharing the same induction date with Xi Delta at Stanford. Its charter line initially joined through Kappa Phi." },
+    { year: "2000", title: "Iota Beta Sigma", area: "San Jose / Silicon Valley", x: 2520, y: 2254,
+      text: "Iota Beta Sigma was chartered on January 28, 2000 to serve the Silicon Valley and the greater San Francisco Bay Area, including Alameda, Santa Clara, and San Mateo counties." },
+    { year: "2005", title: "Pi Phi, San Francisco State", area: "San Francisco Bay Area", x: 1820, y: 2186,
+      text: "Pi Phi was chartered on April 22, 2005. Its charter members were dedicated to increasing the presence of Sigma Gamma Rho on campus: scholarship, service and sisterhood." },
+    { year: "2013", title: "Sigma Omicron, CSU East Bay", area: "San Francisco Bay Area", x: 1120, y: 2254,
+      text: "Sigma Omicron was chartered on March 2, 2013 by seven students. Its first advisor was Past Western Region Syntaktes Soror Michelle Aldridge." },
+    { type: "end", title: "The Journey Continues", x: 420, y: 2220 }
+  ];
+
+  /* ---------------- Photos (from the NorCal History Project deck) ---------------- */
+  var PICS = {
+    1: [ ["sigma-sigma-1.jpg", "Sigma Sigma, Los Angeles Alumnae Chapter"],
+         ["sigma-sigma-2.jpg", "Sigma Sigma, Los Angeles Alumnae Chapter"],
+         ["sigma-sigma-3.jpg", "Sigma Sigma, Los Angeles Alumnae Chapter"] ],
+    3: [ ["draper.jpg", "Soror Evelyn Coleman Draper"],
+         ["ivey.jpg", "Soror Marie A. Ivey"],
+         ["bts-news-group.jpg", "Beta Theta Sigma members"],
+         ["bts-news-dance.jpg", "Beta Theta Sigma members"] ],
+    4: [ ["crosland.jpg", "Lessie B. Crosland, first Syntaktes of the region"] ],
+    7: [ ["gamma-zeta-sigma.jpg", "Sorors of Gamma Zeta Sigma Chapter, San Francisco"] ],
+    8: [ ["beta-psi-1.jpg", "Beta Psi members, UC Berkeley"],
+         ["beta-psi-2.jpg", "Sorors of the Bay Area and campus chapter Beta Psi"] ],
+    9: [ ["williams.jpg", "Dr. Lorraine A. Williams, Grand Basileus"] ],
+    10: [ ["epsilon-omicron-1.jpg", "Epsilon Omicron members with roses"],
+          ["epsilon-omicron-2.jpg", "\u201CWe are pledging Sigma\u201D \u2014 Epsilon Omicron scrapbook page"],
+          ["aurora-1973.jpg", "The Aurora, September 1973, pages 30\u201331"] ],
+    12: [ ["kappa-phi-collage.jpg", "Kappa Phi members and chapter life"] ],
+    13: [ ["eta-alpha-sigma.jpg", "Eta Alpha Sigma members"],
+          ["eta-alpha-news.jpg", "Eta Alpha Sigma, Sacramento \u2014 from The Aurora"] ],
+    14: [ ["nu-omega-1.jpg", "Nu Omega members in evening dress"],
+          ["nu-omega-2.jpg", "Nu Omega members"],
+          ["nu-omega-yearbook.jpg", "Nu Omega in the Chico State yearbook"] ],
+    15: [ ["xi-delta-1.jpg", "Soror Susan Salcedo"],
+          ["xi-delta-2.jpg", "Sorors Felicia Williams and Mariama Smith"],
+          ["xi-delta-pulse.jpg", "Undergraduate Pulse \u2014 The Aurora"] ],
+    16: [ ["xi-epsilon-1.jpg", "Xi Epsilon members at night on the steps"],
+          ["xi-epsilon-2.jpg", "Xi Epsilon members"],
+          ["xi-epsilon-3.jpg", "Xi Epsilon members outdoors"],
+          ["xi-epsilon-letter.jpg", "Letter from Bonita M. Herring, May 25, 1994"] ],
+    17: [ ["iota-beta-sigma-1.jpg", "Iota Beta Sigma members on the stairs"],
+          ["iota-beta-sigma-2.jpg", "Iota Beta Sigma backpack giveaway"],
+          ["iota-beta-sigma-3.jpg", "Iota Beta Sigma members in gold and cream"] ],
+    18: [ ["pi-phi-charter.jpg", "Pi Phi charter, Grand Chapter, April 22, 2005"],
+          ["pi-phi-poster.jpg", "Pi Phi chapter poster \u2014 Scholarship, Sisterhood, Service"] ],
+    19: [ ["sigma-omicron-dallas.jpg", "Soror Shayla Dallas"],
+          ["sigma-omicron-1.jpg", "Sigma Omicron, Spring 2013"],
+          ["sigma-omicron-2.jpg", "Charter members with Advisor Soror Michelle Aldridge"] ]
+  };
+  var TOTAL = 20; /* journey stops 1..20; stop 0 is the overview */
+  var CARD_W = 520;
+
+  var plane = document.getElementById("plane");
+  var cardsWrap = document.getElementById("cards");
+  var svg = document.getElementById("pathSvg");
+  var overviewEl = document.getElementById("overview");
+  var progressEl = document.getElementById("progress");
+  var prevBtn = document.getElementById("prevBtn");
+  var nextBtn = document.getElementById("nextBtn");
+  var scrubber = document.getElementById("scrubber");
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------------- Build cards ---------------- */
+  var cardEls = [null];
+  STOPS.forEach(function (s, i) {
+    if (i === 0) return;
+    var el = document.createElement("article");
+    el.style.left = s.x + "px";
+    el.style.top = s.y + "px";
+    if (s.type === "end") {
+      el.className = "card end";
+      el.innerHTML =
+        '<div class="end-kicker">1939 &mdash; Today</div>' +
+        "<h2>" + s.title + "</h2>" +
+        '<p class="credit">Brought to you by the Epistoleus and the History &amp; Archives Committee, Sigma Gamma Rho Sorority, Inc., Western Region</p>' +
+        '<div class="end-actions">' +
+          '<a class="btn btn-gold" href="../interactive-3d-museum/">Enter the Museum</a>' +
+          '<a class="btn btn-outline" href="../">Back to the Archive</a>' +
+        "</div>";
+    } else {
+      el.className = "card";
+      el.innerHTML =
+        '<span class="stopno">Stop ' + i + " of " + TOTAL + "</span>" +
+        '<p class="year">' + s.year + "</p>" +
+        '<span class="area">' + s.area + "</span>" +
+        "<h2>" + s.title + "</h2>" +
+        "<p>" + s.text + "</p>" +
+        (PICS[i] ? '<div class="pics">' + PICS[i].map(function (pc, j) {
+            return '<button type="button" data-pic="' + j + '" aria-label="View photo: ' + pc[1] + '"><img src="photos/' + pc[0] + '" alt="' + pc[1] + '" loading="lazy" /></button>';
+          }).join("") + '</div><p class="pichint">Tap a photo to view</p>' : "");
+      el.setAttribute("role", "button");
+      el.setAttribute("aria-label", "Go to stop " + i + ": " + s.year + ", " + s.title);
+      el.addEventListener("click", function () { goTo(i); });
+      el.querySelectorAll("[data-pic]").forEach(function (btn) {
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          openLightbox(PICS[i], parseInt(btn.getAttribute("data-pic"), 10));
+        });
+      });
+    }
+    cardsWrap.appendChild(el);
+    cardEls.push(el);
+  });
+
+
+  /* ---------------- Lightbox ---------------- */
+  var lb = document.getElementById("lightbox");
+  var lbImg = document.getElementById("lbImg");
+  var lbCap = document.getElementById("lbCap");
+  var lbCount = document.getElementById("lbCount");
+  var lbSet = [], lbIdx = 0;
+  function lbShow() {
+    var pc = lbSet[lbIdx];
+    lbImg.src = "photos/" + pc[0];
+    lbImg.alt = pc[1];
+    lbCap.textContent = pc[1];
+    lbCount.textContent = "Photo " + (lbIdx + 1) + " of " + lbSet.length;
+    document.getElementById("lbPrev").style.visibility = lbSet.length > 1 ? "visible" : "hidden";
+    document.getElementById("lbNext").style.visibility = lbSet.length > 1 ? "visible" : "hidden";
+  }
+  function openLightbox(set, idx) {
+    lbSet = set; lbIdx = idx || 0;
+    lb.classList.add("open");
+    lbShow();
+  }
+  function closeLightbox() { lb.classList.remove("open"); lbImg.src = ""; }
+  document.getElementById("lbClose").addEventListener("click", closeLightbox);
+  document.getElementById("lbPrev").addEventListener("click", function () { lbIdx = (lbIdx - 1 + lbSet.length) % lbSet.length; lbShow(); });
+  document.getElementById("lbNext").addEventListener("click", function () { lbIdx = (lbIdx + 1) % lbSet.length; lbShow(); });
+  lb.addEventListener("click", function (e) { if (e.target === lb) closeLightbox(); });
+  document.addEventListener("keydown", function (e) {
+    if (!lb.classList.contains("open")) return;
+    if (e.key === "Escape") closeLightbox();
+    else if (e.key === "ArrowRight") { lbIdx = (lbIdx + 1) % lbSet.length; lbShow(); }
+    else if (e.key === "ArrowLeft") { lbIdx = (lbIdx - 1 + lbSet.length) % lbSet.length; lbShow(); }
+  });
+
+
+  /* ---------------- Build the winding route ---------------- */
+  (function buildPath() {
+    var pts = [];
+    for (var i = 1; i <= TOTAL; i++) pts.push({ x: STOPS[i].x, y: STOPS[i].y });
+    var d = "M " + pts[0].x + " " + pts[0].y;
+    for (var j = 0; j < pts.length - 1; j++) {
+      var p0 = pts[Math.max(0, j - 1)], p1 = pts[j], p2 = pts[j + 1], p3 = pts[Math.min(pts.length - 1, j + 2)];
+      var c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+      var c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+      d += " C " + c1x.toFixed(1) + " " + c1y.toFixed(1) + ", " + c2x.toFixed(1) + " " + c2y.toFixed(1) + ", " + p2.x + " " + p2.y;
+    }
+    var ns = "http://www.w3.org/2000/svg";
+    var path = document.createElementNS(ns, "path");
+    path.setAttribute("d", d);
+    path.setAttribute("class", "route");
+    svg.appendChild(path);
+    pts.forEach(function (p) {
+      var c = document.createElementNS(ns, "circle");
+      c.setAttribute("cx", p.x); c.setAttribute("cy", p.y); c.setAttribute("r", 13);
+      c.setAttribute("class", "node");
+      svg.appendChild(c);
+    });
+  })();
+
+  /* ---------------- Build the scrubber ---------------- */
+  var track = document.createElement("div");
+  track.className = "track";
+  scrubber.appendChild(track);
+  var dotEls = [];
+  STOPS.forEach(function (s, i) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "dot";
+    var label = i === 0 ? "Start" : (s.type === "end" ? "End" : s.year);
+    var name = i === 0 ? "Overview" : (s.type === "end" ? "The Journey Continues" : s.year + " — " + s.title);
+    b.innerHTML = '<span class="pip"></span><span class="yr">' + label + "</span>";
+    b.setAttribute("aria-label", "Go to " + name);
+    b.title = name;
+    b.addEventListener("click", function () { goTo(i); });
+    track.appendChild(b);
+    dotEls.push(b);
+  });
+
+  /* ---------------- Camera ---------------- */
+  var cur = 0;
+
+  function overviewCam(vw, vh) {
+    var minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    for (var i = 1; i <= TOTAL; i++) {
+      minX = Math.min(minX, STOPS[i].x - 310); maxX = Math.max(maxX, STOPS[i].x + 310);
+      minY = Math.min(minY, STOPS[i].y - 260); maxY = Math.max(maxY, STOPS[i].y + 260);
+    }
+    var k = Math.min(vw / (maxX - minX), vh / (maxY - minY)) * 0.995;
+    return { k: k, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 };
+  }
+
+  var band = { top: 60, h: 600 };
+  function measureBand(vh) {
+    var topbar = document.querySelector("header.topbar");
+    var top = topbar ? topbar.offsetHeight + 8 : 60;
+    var bottom = vh - (document.getElementById("controls").offsetHeight +
+                       document.getElementById("scrubber").offsetHeight + 14);
+    band = { top: top, h: Math.max(bottom - top, 200) };
+  }
+  function focusCam(i, vw, vh) {
+    var s = STOPS[i];
+    var h = cardEls[i] ? cardEls[i].offsetHeight : 380;
+    var k = Math.min((vw * 0.94) / CARD_W, (band.h * 0.94) / h, 1.28);
+    k = Math.max(k, 0.2);
+    return { k: k, cx: s.x, cy: s.y };
+  }
+
+  function apply() {
+    var vw = window.innerWidth, vh = window.innerHeight;
+    measureBand(vh);
+    var cam = cur === 0 ? overviewCam(vw, vh) : focusCam(cur, vw, vh);
+    var tx = vw / 2 - cam.cx * cam.k;
+    var ty = (cur === 0 ? vh * 0.485 : band.top + band.h / 2) - cam.cy * cam.k;
+    plane.style.transform = "translate(" + tx.toFixed(1) + "px, " + ty.toFixed(1) + "px) scale(" + cam.k.toFixed(4) + ")";
+
+    cardEls.forEach(function (el, i) {
+      if (el) {
+        el.classList.toggle("active", i === cur);
+        el.classList.toggle("dim", cur !== 0 && i !== cur);
+      }
+    });
+    dotEls.forEach(function (el, i) {
+      el.classList.toggle("active", i === cur);
+      el.classList.toggle("done", i < cur);
+    });
+    overviewEl.classList.toggle("hidden", cur !== 0);
+    progressEl.textContent = cur === 0 ? "1939 \u2014 2013" : "Stop " + cur + " of " + TOTAL;
+    prevBtn.disabled = cur === 0;
+    nextBtn.disabled = cur === TOTAL;
+
+    var dot = dotEls[cur];
+    if (dot && dot.scrollIntoView) {
+      dot.scrollIntoView({ block: "nearest", inline: "center", behavior: reduced ? "auto" : "smooth" });
+    }
+  }
+
+  function goTo(i) {
+    cur = Math.max(0, Math.min(TOTAL, i));
+    apply();
+  }
+
+  /* ---------------- Controls ---------------- */
+  prevBtn.addEventListener("click", function () { goTo(cur - 1); });
+  nextBtn.addEventListener("click", function () { goTo(cur + 1); });
+  document.getElementById("overviewBtn").addEventListener("click", function () { goTo(0); });
+  document.getElementById("beginBtn").addEventListener("click", function () { goTo(1); });
+  document.querySelectorAll("#overview .chip").forEach(function (chip) {
+    chip.addEventListener("click", function () { goTo(parseInt(chip.getAttribute("data-goto"), 10)); });
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); goTo(cur + 1); }
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); goTo(cur - 1); }
+    else if (e.key === "Home") { e.preventDefault(); goTo(0); }
+    else if (e.key === "End") { e.preventDefault(); goTo(TOTAL); }
+  });
+
+  /* swipe left / right to move along the journey */
+  var touchX = null;
+  document.addEventListener("touchstart", function (e) {
+    touchX = e.changedTouches[0].clientX;
+  }, { passive: true });
+  document.addEventListener("touchend", function (e) {
+    if (touchX === null) return;
+    var dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 64) goTo(cur + (dx < 0 ? 1 : -1));
+    touchX = null;
+  }, { passive: true });
+
+  var resizeT = null;
+  window.addEventListener("resize", function () {
+    plane.classList.add("no-anim");
+    apply();
+    window.clearTimeout(resizeT);
+    resizeT = window.setTimeout(function () { plane.classList.remove("no-anim"); }, 120);
+  });
+
+  apply();
+
+  /* small hook for testing and future embedding */
+  window.JourneyWest = {
+    goTo: goTo,
+    get current() { return cur; },
+    total: TOTAL
+  };
+})();
+</script>
+
+<!-- ======================= FIND YOUR YEAR ======================= -->
+<style>
+  #controls { flex-wrap: wrap; }
+  .fy { display: inline-flex; align-items: center; gap: 8px; }
+  .fy label {
+    font-family: "Bebas Neue", "Poppins", sans-serif; font-weight: 400;
+    font-size: 15px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold-l);
+    white-space: nowrap;
+  }
+  .fy input {
+    width: 88px; font-family: "Bebas Neue", "Poppins", sans-serif; font-size: 16px;
+    letter-spacing: .12em; text-align: center;
+    background: rgba(9, 17, 45, .85); color: var(--cream);
+    border: 1px solid rgba(233, 199, 94, .6); border-radius: 999px; padding: 9px 10px;
+  }
+  .fy input::placeholder { color: rgba(247, 240, 220, .45); }
+  .fy input:focus { outline: 2px solid var(--gold-l); outline-offset: 1px; }
+  .fy input.bad { border-color: #e07a4a; outline-color: #e07a4a; }
+  @media (max-width: 640px) {
+    .fy label { font-size: 13px; }
+    .fy input { width: 74px; padding: 8px 8px; font-size: 15px; }
+  }
+</style>
+<script>
+(function () {
+  "use strict";
+  /* The journey's dated stops, year -> stop number. For a year with
+     more than one stop (1994), the stop named is the latest of them. */
+  var YEAR_STOPS = [
+    [1939, 1], [1946, 2], [1947, 3], [1951, 4], [1952, 5], [1953, 6],
+    [1955, 7], [1958, 8], [1961, 9], [1973, 10], [1978, 11], [1984, 12],
+    [1988, 13], [1994, 16], [2000, 17], [2005, 18], [2013, 19]
+  ];
+  function stopForYear(y) {
+    var target = 1; /* before the first stop, the journey's first stop */
+    for (var i = 0; i < YEAR_STOPS.length; i++) {
+      if (y >= YEAR_STOPS[i][0]) target = YEAR_STOPS[i][1];
+    }
+    return target;
+  }
+  var controls = document.getElementById("controls");
+  if (!controls || !window.JourneyWest) return;
+  var form = document.createElement("form");
+  form.className = "fy";
+  form.setAttribute("aria-label", "Find your year");
+  form.innerHTML =
+    '<label for="fy-year">Find your year</label>' +
+    '<input id="fy-year" type="text" inputmode="numeric" autocomplete="off" ' +
+    'maxlength="4" placeholder="Year" aria-label="Year" />' +
+    '<button class="ctl" id="fy-go" type="submit">Go</button>';
+  form.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var input = document.getElementById("fy-year");
+    var y = parseInt(input.value, 10);
+    if (!y || y < 1000 || y > 9999 || String(y) !== input.value.trim()) {
+      input.classList.add("bad");
+      input.focus();
+      return;
+    }
+    input.classList.remove("bad");
+    window.JourneyWest.goTo(stopForYear(y));
+  });
+  document.getElementById("controls").appendChild(form);
+  /* a small hook for testing, beside JourneyWest */
+  window.JourneyWest.stopForYear = stopForYear;
+})();
+</script>
+
+</body>
+</html>

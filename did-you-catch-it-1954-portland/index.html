@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" href="data:," />
+    <title>Did You Catch It? 1954 — Portland</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        color-scheme: light;
+        --blue: #2041A5;
+        --blue-deep: #162E75;
+        --gold: #DFB136;
+        --gold-soft: #F3D67B;
+        --paper: #FDF9EE;
+        --paper-2: #F5EDD6;
+        --ink: #1C2440;
+        --ink-soft: #4A5170;
+        --line: #2041A5;
+        --card: #FDF9EE;
+        --correct-bg: #2041A5;
+        --correct-ink: #FDF9EE;
+        --wrong-bg: #F5EDD6;
+        --wrong-line: #DFB136;
+        --wrong-ink: #162E75;
+        --shadow: 0 18px 50px rgba(22, 46, 117, 0.22);
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        background: #E9E2CC;
+        color: var(--ink);
+        min-height: 100dvh;
+        display: flex;
+        justify-content: center;
+      }
+
+      .story {
+        width: 100%;
+        max-width: 480px;
+        min-height: 100dvh;
+        background: var(--paper);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+      }
+      @media (min-width: 560px) {
+        body { align-items: center; padding: 28px 16px; }
+        .story {
+          min-height: min(880px, calc(100dvh - 56px));
+          border-radius: 18px;
+          box-shadow: var(--shadow);
+          border: 3px solid var(--blue);
+        }
+      }
+
+      /* halftone dots, newspaper texture */
+      .story::before {
+        content: "";
+        position: absolute; inset: 0;
+        background-image: radial-gradient(rgba(32,65,165,0.055) 1px, transparent 1.4px);
+        background-size: 9px 9px;
+        pointer-events: none;
+      }
+      .segments {
+        display: flex; gap: 6px;
+        padding: 16px 20px 0;
+        position: relative; z-index: 2;
+      }
+      .seg {
+        flex: 1; height: 5px; border-radius: 99px;
+        background: color-mix(in srgb, var(--blue) 22%, transparent);
+        overflow: hidden;
+      }
+      .seg span { display: block; height: 100%; width: 0%; background: var(--gold); border-radius: 99px; transition: width .45s ease; }
+      .seg.done span, .seg.active span { width: 100%; }
+      .seg.active span { background: var(--blue); }
+
+      main { flex: 1; display: flex; flex-direction: column; position: relative; z-index: 1; padding: 0 22px; }
+      .screen { display: none; flex: 1; flex-direction: column; animation: fade .3s ease; }
+      .screen.on { display: flex; }
+      @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+      @media (prefers-reduced-motion: reduce) {
+        .screen { animation: none; }
+        .seg span { transition: none; }
+      }
+
+      /* ---------- Masthead ---------- */
+      .masthead { text-align: center; padding-top: 22px; }
+      .extra {
+        font-family: "Oswald", "Arial Narrow", Impact, sans-serif;
+        font-weight: 700;
+        font-size: clamp(27px, 7.6vw, 38px);
+        letter-spacing: .015em;
+        color: var(--blue);
+        line-height: 1.08;
+        margin: 0;
+        text-transform: uppercase;
+      }
+      .rule-gold-double {
+        border-top: 3.5px solid var(--gold);
+        border-bottom: 1.5px solid var(--gold);
+        height: 7px;
+        margin: 12px 0 0;
+      }
+      .dateline {
+        margin: 14px auto 0;
+        display: inline-block;
+        background: var(--blue);
+        color: var(--paper);
+        font-weight: 700;
+        font-size: 12.5px;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        padding: 7px 14px;
+        border-radius: 3px;
+      }
+
+      .lesson-label {
+        margin-top: 26px;
+        font-size: 11.5px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase;
+        color: var(--blue);
+        text-align: center;
+      }
+      .lesson-title {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-weight: 700;
+        font-size: clamp(30px, 8.6vw, 42px);
+        line-height: 1.08;
+        text-align: center;
+        margin: 10px 0 0;
+        color: var(--ink);
+      }
+      .lesson-sub {
+        text-align: center;
+        color: var(--ink-soft);
+        font-size: 16px; line-height: 1.55;
+        margin: 14px auto 0;
+        max-width: 34ch;
+      }
+      .byline {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-style: italic;
+        text-align: center;
+        font-size: 13.5px;
+        color: var(--ink-soft);
+        margin-top: 16px;
+      }
+      .spacer { flex: 1; }
+      .cta-col { padding: 22px 0 8px; display: flex; flex-direction: column; gap: 10px; }
+
+      .btn {
+        appearance: none; border: none; cursor: pointer;
+        font-family: inherit; font-weight: 800;
+        border-radius: 10px;
+        padding: 17px 20px;
+        font-size: 17px;
+        letter-spacing: .02em;
+        text-align: center;
+        transition: transform .12s ease, background .15s ease;
+        width: 100%;
+      }
+      .btn:active { transform: scale(.985); }
+      .btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+      .btn-primary { background: var(--blue); color: var(--paper); box-shadow: 0 8px 20px rgba(32,65,165,.3); }
+      .btn-primary:hover { background: var(--blue-deep); }
+      .btn-gold { background: var(--gold); color: #162E75; }
+      .btn-gold:hover { background: var(--gold-soft); }
+      .btn-ghost {
+        background: transparent; color: var(--blue);
+        border: 2px solid var(--blue);
+      }
+      .quick-note { text-align: center; font-size: 13px; color: var(--ink-soft); margin: 0; font-weight: 600; letter-spacing: .04em; }
+
+      /* ---------- Questions ---------- */
+      .q-count {
+        margin-top: 22px;
+        font-size: 12px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase;
+        color: var(--blue); text-align: center;
+      }
+      .q-score { text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-top: 5px; }
+      .q-text {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-weight: 700;
+        font-size: clamp(24px, 6.6vw, 31px);
+        line-height: 1.22;
+        text-align: center;
+        margin: 14px 0 0;
+        color: var(--ink);
+      }
+      .options { display: flex; flex-direction: column; gap: 11px; margin-top: 24px; }
+      .opt {
+        appearance: none; cursor: pointer; width: 100%;
+        font-family: inherit;
+        background: var(--card);
+        border: 2px solid var(--blue);
+        color: var(--ink);
+        border-radius: 10px;
+        padding: 16px 16px;
+        font-size: 16.5px; font-weight: 700; line-height: 1.3;
+        text-align: left;
+        display: flex; align-items: center; gap: 12px;
+        transition: background .15s ease, border-color .15s ease, transform .1s ease;
+      }
+      .opt:active { transform: scale(.99); }
+      .opt:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+      .opt .mark {
+        flex: 0 0 auto;
+        width: 26px; height: 26px; border-radius: 50%;
+        border: 2px solid var(--blue);
+        display: grid; place-items: center;
+        font-size: 14px; font-weight: 800; color: var(--blue);
+      }
+      .opt:disabled { cursor: default; opacity: 1; }
+      .opt.is-correct { background: var(--correct-bg); color: var(--correct-ink); border-color: var(--correct-bg); }
+      .opt.is-correct .mark { border-color: currentColor; color: inherit; }
+      .opt.is-wrong { background: var(--wrong-bg); color: var(--wrong-ink); border-color: var(--wrong-line); }
+      .opt.is-wrong .mark { border-color: var(--wrong-line); color: var(--wrong-line); }
+      .opt.is-dim { opacity: .45; }
+
+      .explain {
+        display: none;
+        margin-top: 18px;
+        border-top: 1.5px solid var(--line);
+        border-bottom: 1.5px solid var(--line);
+        padding: 13px 4px;
+        text-align: center;
+      }
+      .explain.show { display: block; animation: fade .3s ease; }
+      .explain .verdict {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-weight: 700; font-size: 19px; margin: 0 0 4px;
+        color: var(--blue);
+      }
+      .explain .verdict.no { color: var(--blue-deep); }
+      .explain p { margin: 0; font-size: 15.5px; line-height: 1.5; color: var(--ink); }
+
+      /* ---------- Score card ---------- */
+      .score-wrap { text-align: center; padding-top: 24px; }
+      .score-kicker { font-size: 12px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--blue); }
+      .score-big {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-weight: 700;
+        font-size: clamp(76px, 24vw, 110px);
+        line-height: 1;
+        color: var(--blue);
+        margin: 10px 0 0;
+      }
+      .score-big small { font-size: .42em; color: var(--ink-soft); font-weight: 700; }
+      .score-headline {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-style: italic; font-weight: 700;
+        font-size: clamp(21px, 5.8vw, 26px);
+        margin: 10px 0 0; color: var(--ink); line-height: 1.25;
+      }
+      .score-card {
+        margin-top: 22px;
+        border: 3px solid var(--gold);
+        border-radius: 6px;
+        background: var(--blue);
+        color: var(--paper);
+        padding: 18px 16px;
+        position: relative;
+        text-align: center;
+      }
+      .score-card::before {
+        content: "★ ★ ★";
+        display: block; color: var(--gold); letter-spacing: .5em; font-size: 13px; margin-bottom: 8px;
+      }
+      .score-line {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-size: 16.5px; line-height: 1.5; margin: 0; color: var(--paper);
+      }
+      .teaser {
+        margin-top: 22px;
+        background: var(--blue); color: var(--paper);
+        border: 3px solid var(--gold);
+        border-radius: 10px; padding: 15px 16px;
+        font-size: 15.5px; line-height: 1.45;
+      }
+      .teaser strong {
+        display: block;
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-size: 19px; font-weight: 700; letter-spacing: .01em; margin-bottom: 2px;
+      }
+      .teaser strong em { color: var(--gold); font-style: normal; }
+
+      footer {
+        position: relative; z-index: 1;
+        padding: 14px 22px calc(18px + env(safe-area-inset-bottom));
+        text-align: center;
+      }
+      .foot-rule { border: none; border-top: 1.5px solid var(--line); margin: 0 0 10px; }
+      footer p { margin: 0; font-size: 11.5px; line-height: 1.55; color: var(--ink-soft); font-weight: 600; }
+      .copied-note { min-height: 18px; font-size: 13.5px; font-weight: 700; color: var(--blue); margin: 0; text-align: center; }
+    </style>
+  <style id="wr-modern-fonts">
+  * { font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif !important; }
+  h1, h2, h3, [class*="title"], [class*="headline"], [class*="masthead"] {
+    font-family: 'Lemon/Milk', 'LEMON MILK', 'Bebas Neue', 'Poppins', sans-serif !important;
+    letter-spacing: .03em;
+  }
+  h4, h5, h6, button, .btn, a.btn, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"] {
+    font-family: 'Bebas Neue', 'Lemon/Milk', 'LEMON MILK', 'Poppins', sans-serif !important;
+    letter-spacing: .07em;
+  }
+</style>
+</head>
+  <body>
+    <div class="story">
+      <div class="segments" aria-hidden="true">
+        <div class="seg" id="seg0"><span></span></div>
+        <div class="seg" id="seg1"><span></span></div>
+        <div class="seg" id="seg2"><span></span></div>
+      </div>
+
+      <main>
+        <!-- INTRO -->
+        <section class="screen on" id="screen-intro" aria-label="Introduction">
+          <div class="masthead">
+            <h1 class="extra">EXTRA! EXTRA! — Did You Catch It?</h1>
+            <div class="rule-gold-double" aria-hidden="true"></div>
+            <div><span class="dateline">1954 · Oregon Daily Journal · Portland</span></div>
+          </div>
+
+          <p class="lesson-label">This Week's History Lesson</p>
+          <h2 class="lesson-title">Church in the Morning, Tea in the Afternoon</h2>
+          <p class="lesson-sub">Beta Eta Sigma marked Founders' Day in Portland, from morning worship to an afternoon tea. Three quick questions, straight from the 1954 clipping.</p>
+          <p class="byline">— From the pages of the Oregon Daily Journal —</p>
+
+          <div class="spacer"></div>
+          <div class="cta-col">
+            <button class="btn btn-primary" id="btn-start" type="button">Start the Quiz</button>
+            <p class="quick-note">3 QUESTIONS · UNDER A MINUTE · TAP TO PLAY</p>
+          </div>
+        </section>
+
+        <!-- QUESTION -->
+        <section class="screen" id="screen-quiz" aria-label="Quiz question">
+          <p class="q-count" id="q-count">Question 1 of 3</p>
+          <p class="q-score" id="q-score" aria-live="polite">Score: 0</p>
+          <h2 class="q-text" id="q-text"></h2>
+          <div class="options" id="options" role="group" aria-label="Answer choices"></div>
+          <div class="explain" id="explain" aria-live="polite">
+            <p class="verdict" id="verdict"></p>
+            <p id="explain-text"></p>
+          </div>
+          <div class="spacer"></div>
+          <div class="cta-col">
+            <button class="btn btn-primary" id="btn-next" type="button" style="display:none;">Next Question</button>
+          </div>
+        </section>
+
+        <!-- SCORE -->
+        <section class="screen" id="screen-score" aria-label="Your score">
+          <div class="score-wrap">
+            <p class="score-kicker">The Final Edition</p>
+            <p class="score-big"><span id="score-num">0</span><small> / 3</small></p>
+            <p class="score-headline" id="score-headline"></p>
+          </div>
+
+          <div class="score-card">
+            <p class="score-line" id="score-line"></p>
+          </div>
+
+          <div class="teaser">
+            <strong>Next week: <em>1958, Oakland</em></strong>
+            A new clipping, a new city, three new chances to catch it. See it in Stories next week.
+          </div>
+
+          <div class="spacer"></div>
+          <div class="cta-col">
+            <p class="copied-note" id="copied-note" aria-live="polite"></p>
+            <button class="btn btn-gold" id="btn-copy" type="button">Copy Score</button>
+            <button class="btn btn-ghost" id="btn-again" type="button">Play Again</button>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <hr class="foot-rule" />
+        <p>Brought to you by the Epistoleus and the History &amp; Archives Committee, Sigma Gamma Rho Sorority, Inc., Western Region.</p>
+      </footer>
+    </div>
+
+    <script>
+      var QUESTIONS = [
+        {
+          text: "Beta Eta Sigma opened Founders' Day with worship at which church?",
+          correct: "Hughes Memorial Church",
+          wrong: ["Morning Star Church", "First Institutional Baptist Church"],
+          explain: "Beta Eta Sigma opened Founders' Day with worship at Hughes Memorial Church."
+        },
+        {
+          text: "After worship, what did the chapter hold?",
+          correct: "A Founders' Day tea",
+          wrong: ["A banquet", "A lecture"],
+          explain: "After worship, the chapter held a Founders' Day tea, from 2 to 6 that afternoon."
+        },
+        {
+          text: "Where was the tea held?",
+          correct: "At Mrs. Wilber Marshall's home",
+          wrong: ["In the church hall", "At the YMCA"],
+          explain: "The tea was held at Mrs. Wilber Marshall's home on NE Thompson Street."
+        }
+      ];
+
+      var current = 0;
+      var score = 0;
+      var answered = false;
+
+      var screens = {
+        intro: document.getElementById("screen-intro"),
+        quiz: document.getElementById("screen-quiz"),
+        score: document.getElementById("screen-score")
+      };
+      var segs = [document.getElementById("seg0"), document.getElementById("seg1"), document.getElementById("seg2")];
+      var qCount = document.getElementById("q-count");
+      var qScore = document.getElementById("q-score");
+      var qText = document.getElementById("q-text");
+      var optionsEl = document.getElementById("options");
+      var explainEl = document.getElementById("explain");
+      var verdictEl = document.getElementById("verdict");
+      var explainText = document.getElementById("explain-text");
+      var btnNext = document.getElementById("btn-next");
+
+      function show(name) {
+        screens.intro.classList.toggle("on", name === "intro");
+        screens.quiz.classList.toggle("on", name === "quiz");
+        screens.score.classList.toggle("on", name === "score");
+      }
+
+      function setSegs() {
+        for (var i = 0; i < segs.length; i++) {
+          segs[i].classList.remove("done", "active");
+          if (i < current) segs[i].classList.add("done");
+          else if (i === current) segs[i].classList.add("active");
+        }
+      }
+
+      function shuffle(arr) {
+        var a = arr.slice();
+        for (var i = a.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+        return a;
+      }
+
+      function renderQuestion() {
+        answered = false;
+        var q = QUESTIONS[current];
+        setSegs();
+        qCount.textContent = "Question " + (current + 1) + " of 3";
+        qScore.textContent = "Score: " + score;
+        qText.textContent = q.text;
+        explainEl.classList.remove("show");
+        btnNext.style.display = "none";
+        btnNext.textContent = current === QUESTIONS.length - 1 ? "See My Score" : "Next Question";
+        optionsEl.innerHTML = "";
+
+        var choices = shuffle([q.correct].concat(q.wrong));
+        var letters = ["A", "B", "C"];
+        choices.forEach(function (choice, idx) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "opt";
+          var mark = document.createElement("span");
+          mark.className = "mark";
+          mark.textContent = letters[idx];
+          var label = document.createElement("span");
+          label.textContent = choice;
+          b.appendChild(mark);
+          b.appendChild(label);
+          b.addEventListener("click", function () { answer(b, choice); });
+          optionsEl.appendChild(b);
+        });
+      }
+
+      function answer(btn, choice) {
+        if (answered) return;
+        answered = true;
+        var q = QUESTIONS[current];
+        var isRight = choice === q.correct;
+        if (isRight) score++;
+
+        var opts = optionsEl.querySelectorAll(".opt");
+        opts.forEach(function (o) {
+          o.disabled = true;
+          var label = o.querySelector("span:last-child").textContent;
+          if (label === q.correct) {
+            o.classList.add("is-correct");
+            o.querySelector(".mark").textContent = "✓";
+          } else if (o === btn) {
+            o.classList.add("is-wrong");
+            o.querySelector(".mark").textContent = "✕";
+          } else {
+            o.classList.add("is-dim");
+          }
+        });
+
+        verdictEl.textContent = isRight ? "You caught it!" : "Not quite — here it is:";
+        verdictEl.classList.toggle("no", !isRight);
+        explainText.textContent = q.explain;
+        explainEl.classList.add("show");
+        qScore.textContent = "Score: " + score;
+        btnNext.style.display = "block";
+        btnNext.focus();
+      }
+
+      function renderScore() {
+        for (var i = 0; i < segs.length; i++) { segs[i].classList.remove("active"); segs[i].classList.add("done"); }
+        document.getElementById("score-num").textContent = score;
+        var headline = score === 3 ? "Front-page perfect. Nothing got past those eyes."
+          : score === 2 ? "Sharp eyes. Nearly every word caught."
+          : score === 1 ? "A good start. The clipping rewards a second read."
+          : "The story almost slipped by. It is waiting in the museum of clippings for a rematch.";
+        document.getElementById("score-headline").textContent = headline;
+        document.getElementById("score-line").textContent =
+          "I caught " + score + " of 3 — 1954, Portland · Mighty Western Region history";
+        document.getElementById("copied-note").textContent = "";
+        var copyBtn = document.getElementById("btn-copy");
+        copyBtn.textContent = "Copy Score";
+        show("score");
+      }
+
+      document.getElementById("btn-start").addEventListener("click", function () {
+        current = 0; score = 0;
+        show("quiz");
+        renderQuestion();
+      });
+
+      btnNext.addEventListener("click", function () {
+        current++;
+        if (current >= QUESTIONS.length) renderScore();
+        else renderQuestion();
+      });
+
+      document.getElementById("btn-again").addEventListener("click", function () {
+        current = 0; score = 0;
+        show("quiz");
+        renderQuestion();
+      });
+
+      document.getElementById("btn-copy").addEventListener("click", function () {
+        var text = document.getElementById("score-line").textContent;
+        var note = document.getElementById("copied-note");
+        var btn = document.getElementById("btn-copy");
+        function done() {
+          btn.textContent = "Copied ✓";
+          note.textContent = "Score copied — paste it anywhere to share.";
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, function () { fallback(); });
+        } else { fallback(); }
+        function fallback() {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed"; ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand("copy"); done(); }
+          catch (e) { note.textContent = text; }
+          document.body.removeChild(ta);
+        }
+      });
+    </script>
+  </body>
+</html>

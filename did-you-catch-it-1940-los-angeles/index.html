@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Did You Catch It? 1940 — Los Angeles</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --blue: #2041A5;
+        --blue-deep: #16296b;
+        --gold: #DFB136;
+        --gold-soft: #f3d98b;
+        --paper: #f7f1e1;
+        --paper-edge: #efe5cb;
+        --ink: #1d1a12;
+        --ink-soft: #4c4636;
+        --backdrop: #101736;
+        --wrong: #16296b;
+        --wrong-bg: #e9dfc2;
+        --right-bg: #fdf3d3;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: #efe7d2;
+          --paper-edge: #e3d7b8;
+          --backdrop: #070b22;
+          color-scheme: dark;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(120% 90% at 50% 0%, #1d2c63 0%, var(--backdrop) 60%);
+        font-family: Georgia, "Times New Roman", Times, serif;
+        color: var(--ink);
+        display: flex;
+        justify-content: center;
+      }
+
+      /* ---------- Story frame (9:16, mobile-first) ---------- */
+      .story {
+        position: relative;
+        width: 100%;
+        max-width: 440px;
+        height: 100dvh;
+        max-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        background:
+          repeating-linear-gradient(0deg, rgba(29,26,18,.025) 0 1px, transparent 1px 3px),
+          linear-gradient(175deg, var(--paper) 0%, var(--paper-edge) 100%);
+        box-shadow: 0 0 0 1px rgba(223,177,54,.35), 0 24px 70px rgba(0,0,0,.55);
+        overflow: hidden;
+      }
+      @media (min-width: 560px) and (min-height: 760px) {
+        body { align-items: center; padding: 22px 0; }
+        .story {
+          height: min(92dvh, 860px);
+          border-radius: 18px;
+        }
+      }
+
+      /* ---------- Progress bars (Stories style) ---------- */
+      .progress {
+        display: flex;
+        gap: 5px;
+        padding: 12px 14px 0;
+        flex: 0 0 auto;
+      }
+      .progress span {
+        flex: 1;
+        height: 4px;
+        border-radius: 99px;
+        background: rgba(32,65,165,.22);
+        overflow: hidden;
+        position: relative;
+      }
+      .progress span.done { background: var(--blue); }
+      .progress span.now { background: rgba(32,65,165,.22); }
+      .progress span.now::after {
+        content: "";
+        position: absolute; inset: 0;
+        width: 55%;
+        background: var(--gold);
+        border-radius: 99px;
+      }
+
+      /* ---------- Masthead ---------- */
+      .masthead {
+        padding: 12px 20px 0;
+        text-align: center;
+        flex: 0 0 auto;
+      }
+      .dateline {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        border-bottom: 1px solid rgba(29,26,18,.5);
+        padding-bottom: 5px;
+      }
+      .dateline .mid { color: var(--blue); }
+      .brand {
+        font-family: "Oswald", "Arial Narrow", sans-serif;
+        font-weight: 700;
+        font-size: clamp(27px, 7.8vw, 36px);
+        line-height: 1.08;
+        letter-spacing: .015em;
+        text-transform: uppercase;
+        margin: 10px 0 2px;
+        color: var(--blue);
+      }
+      .brand .q { color: var(--blue); }
+      .rule-double {
+        border-top: 3px solid var(--gold);
+        border-bottom: 1px solid var(--gold);
+        height: 5px;
+        margin-top: 8px;
+      }
+      .source-line {
+        margin: 9px 0 0;
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-style: italic;
+        font-size: 15px;
+        color: var(--ink-soft);
+      }
+      .source-line b { font-style: normal; color: var(--blue); }
+
+      /* ---------- Screens ---------- */
+      .screens { flex: 1 1 auto; position: relative; min-height: 0; }
+      .screen {
+        position: absolute; inset: 0;
+        display: none;
+        flex-direction: column;
+        padding: 14px 20px 18px;
+        overflow-y: auto;
+      }
+      .screen.active { display: flex; }
+
+      /* Cover */
+      .kicker {
+        align-self: center;
+        font-size: 11px; font-weight: 800;
+        letter-spacing: .22em; text-transform: uppercase;
+        color: var(--paper);
+        background: var(--blue);
+        padding: 6px 14px;
+        border-radius: 2px;
+        margin-top: 8px;
+      }
+      .lesson-title {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-weight: 900;
+        font-size: clamp(34px, 10vw, 46px);
+        line-height: 1.04;
+        text-align: center;
+        margin: 18px 0 10px;
+        color: var(--ink);
+      }
+      .lesson-sub {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-size: 17px;
+        line-height: 1.45;
+        text-align: center;
+        color: var(--ink-soft);
+        margin: 0 auto;
+        max-width: 30ch;
+      }
+      .cover-art {
+        margin: 20px auto 4px;
+        width: min(240px, 62%);
+        border: 2px solid var(--ink);
+        outline: 1px solid var(--ink);
+        outline-offset: 4px;
+        background: var(--blue);
+        color: var(--gold-soft);
+        text-align: center;
+        padding: 16px 10px 13px;
+      }
+      .cover-art .yr {
+        font-family: "Oswald", "Arial Narrow", sans-serif;
+        font-weight: 900;
+        font-size: 52px;
+        line-height: 1;
+        color: var(--gold);
+      }
+      .cover-art .city {
+        font-size: 11px; font-weight: 800;
+        letter-spacing: .3em; text-transform: uppercase;
+        margin-top: 6px;
+        color: var(--paper);
+      }
+      .cover-art .vol {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-style: italic;
+        font-size: 13px;
+        margin-top: 4px;
+      }
+
+      /* Buttons */
+      .btn {
+        appearance: none;
+        border: none;
+        cursor: pointer;
+        font-family: "Oswald", "Arial Narrow", sans-serif;
+        font-weight: 600;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        border-radius: 4px;
+        transition: transform .08s ease, background .15s ease;
+      }
+      .btn:active { transform: scale(.98); }
+      .btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+      .btn-primary {
+        background: var(--blue);
+        color: #fff;
+        font-size: 15px;
+        padding: 16px 22px;
+        box-shadow: 0 4px 0 var(--blue-deep);
+        width: 100%;
+      }
+      .btn-primary:hover { background: #2a4fc0; }
+      .btn-gold {
+        background: var(--gold);
+        color: var(--blue-deep);
+        font-size: 14px;
+        padding: 14px 20px;
+        box-shadow: 0 4px 0 #b28c22;
+        width: 100%;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--blue);
+        border: 2px solid var(--blue);
+        font-size: 14px;
+        padding: 13px 20px;
+        width: 100%;
+      }
+      .spacer { flex: 1 1 auto; }
+      .tap-hint {
+        text-align: center;
+        font-size: 11px; font-weight: 700;
+        letter-spacing: .18em; text-transform: uppercase;
+        color: var(--ink-soft);
+        margin-top: 12px;
+      }
+
+      /* Questions */
+      .q-count {
+        font-size: 11px; font-weight: 800;
+        letter-spacing: .22em; text-transform: uppercase;
+        color: var(--blue);
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .q-count .dots { letter-spacing: .35em; color: rgba(32,65,165,.35); font-size: 13px; }
+      .q-count .dots i { font-style: normal; }
+      .q-count .dots i.on { color: var(--gold); }
+      .question {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-weight: 700;
+        font-size: clamp(23px, 6.4vw, 28px);
+        line-height: 1.22;
+        margin: 14px 0 20px;
+      }
+      .options { display: flex; flex-direction: column; gap: 11px; }
+      .option {
+        appearance: none;
+        text-align: left;
+        cursor: pointer;
+        background: rgba(255,255,255,.55);
+        border: 2px solid var(--ink);
+        border-radius: 4px;
+        padding: 15px 16px;
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-size: 16px; font-weight: 600;
+        color: var(--ink);
+        display: flex; align-items: center; gap: 12px;
+        transition: background .15s ease, border-color .15s ease, transform .08s ease;
+      }
+      .option:active { transform: scale(.99); }
+      .option:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+      .option .letter {
+        flex: 0 0 auto;
+        width: 28px; height: 28px;
+        border: 2px solid var(--ink);
+        border-radius: 50%;
+        display: grid; place-items: center;
+        font-size: 13px; font-weight: 800;
+        background: var(--paper);
+      }
+      .option .mark { margin-left: auto; font-weight: 900; font-size: 18px; }
+      .option:disabled { cursor: default; opacity: 1; }
+      .option.correct {
+        background: var(--right-bg);
+        border-color: var(--blue);
+        box-shadow: inset 0 0 0 1px var(--gold);
+      }
+      .option.correct .letter { background: var(--blue); border-color: var(--blue); color: var(--gold); }
+      .option.correct .mark { color: var(--blue); }
+      .option.wrong {
+        background: var(--wrong-bg);
+        border-color: var(--wrong);
+      }
+      .option.wrong .letter { background: var(--wrong); border-color: var(--wrong); color: var(--paper); }
+      .option.wrong .mark { color: var(--wrong); }
+      .option.dim { opacity: .45; }
+
+      .explain {
+        display: none;
+        margin-top: 16px;
+        border-top: 3px double var(--ink);
+        padding-top: 12px;
+      }
+      .explain.show { display: block; }
+      .explain .verdict {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-weight: 900;
+        font-size: 20px;
+        color: var(--blue-deep);
+        margin: 0 0 4px;
+      }
+      .explain .verdict.missed { color: var(--blue-deep); }
+      .explain p {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-size: 16.5px;
+        line-height: 1.4;
+        margin: 0 0 14px;
+        color: var(--ink);
+      }
+
+      /* Score card */
+      .score-frame {
+        border: 3px solid var(--gold);
+        outline: 1px solid var(--gold);
+        outline-offset: 5px;
+        background: var(--blue);
+        color: var(--paper);
+        padding: 22px 18px 18px;
+        text-align: center;
+        margin-top: 10px;
+      }
+      .score-frame .sf-kicker {
+        font-size: 10.5px; font-weight: 800;
+        letter-spacing: .24em; text-transform: uppercase;
+        color: var(--gold);
+      }
+      .score-big {
+        font-family: "Oswald", "Arial Narrow", sans-serif;
+        font-weight: 700;
+        font-size: 64px;
+        line-height: 1;
+        margin: 10px 0 2px;
+        color: var(--gold);
+      }
+      .score-big small { font-size: 30px; color: var(--paper); }
+      .score-line {
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-size: 16.5px;
+        line-height: 1.45;
+        margin: 8px auto 0;
+        max-width: 32ch;
+        color: var(--paper);
+      }
+      .score-stars { color: var(--gold); font-size: 20px; letter-spacing: .3em; margin-top: 8px; }
+      .score-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+      .copied-note {
+        min-height: 18px;
+        text-align: center;
+        font-size: 12.5px; font-weight: 700;
+        letter-spacing: .08em; text-transform: uppercase;
+        color: var(--blue);
+        margin-top: 8px;
+      }
+      .next-week {
+        margin-top: 16px;
+        background: var(--blue);
+        color: var(--paper);
+        text-align: center;
+        padding: 13px 14px;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      .next-week b {
+        font-family: "Oswald", "Arial Narrow", sans-serif;
+        font-size: 16px;
+        color: var(--gold);
+        letter-spacing: .02em;
+      }
+      .credit {
+        flex: 0 0 auto;
+        padding: 10px 20px calc(12px + env(safe-area-inset-bottom));
+        text-align: center;
+        font-size: 10.5px;
+        line-height: 1.5;
+        letter-spacing: .05em;
+        color: var(--ink-soft);
+        border-top: 1px solid rgba(29,26,18,.35);
+      }
+      .credit b { color: var(--blue); }
+
+      @media (prefers-reduced-motion: reduce) {
+        * { transition: none !important; animation: none !important; }
+      }
+    </style>
+  <style id="wr-modern-fonts">
+  * { font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif !important; }
+  h1, h2, h3, [class*="title"], [class*="headline"], [class*="masthead"] {
+    font-family: 'Lemon/Milk', 'LEMON MILK', 'Bebas Neue', 'Poppins', sans-serif !important;
+    letter-spacing: .03em;
+  }
+  h4, h5, h6, button, .btn, a.btn, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"] {
+    font-family: 'Bebas Neue', 'Lemon/Milk', 'LEMON MILK', 'Poppins', sans-serif !important;
+    letter-spacing: .07em;
+  }
+</style>
+</head>
+  <body>
+    <main class="story" aria-label="Did You Catch It? 1940, Los Angeles — weekly quiz">
+
+      <div class="progress" id="progress" aria-hidden="true">
+        <span data-seg="0"></span><span data-seg="1"></span><span data-seg="2"></span><span data-seg="3"></span><span data-seg="4"></span>
+      </div>
+
+      <header class="masthead">
+        <div class="dateline">
+          <span>Weekly Stories Edition</span>
+          <span class="mid">No. 1 of 5</span>
+          <span>Founders Day Series</span>
+        </div>
+        <h1 class="brand">EXTRA! EXTRA! &mdash; Did You Catch It?</h1>
+        <div class="rule-double" aria-hidden="true"></div>
+        <p class="source-line"><b>1940</b> &middot; California Eagle &middot; <b>Los Angeles</b></p>
+      </header>
+
+      <div class="screens">
+
+        <!-- COVER -->
+        <section class="screen active" id="screen-cover" aria-label="Cover">
+          <span class="kicker">This Week&rsquo;s Lesson</span>
+          <h2 class="lesson-title">The Movie Star and the Founder</h2>
+          <p class="lesson-sub">Three questions from the 1940 California Eagle. Read the story, then prove it &mdash; did you catch it?</p>
+          <div class="cover-art" aria-hidden="true">
+            <div class="yr">1940</div>
+            <div class="city">Los Angeles</div>
+            <div class="vol">California Eagle &middot; Nov. 7, 1940</div>
+          </div>
+          <div class="spacer"></div>
+          <button class="btn btn-primary" id="startBtn" type="button">Start the Quiz</button>
+          <p class="tap-hint">Three questions &middot; Under a minute</p>
+        </section>
+
+        <!-- QUESTIONS (built by script) -->
+        <section class="screen" id="screen-q" aria-label="Question">
+          <div class="q-count">
+            <span id="qLabel">Question 1 of 3</span>
+            <span class="dots" id="qDots" aria-hidden="true"><i>&#9679;</i><i>&#9679;</i><i>&#9679;</i></span>
+          </div>
+          <h2 class="question" id="qText"></h2>
+          <div class="options" id="qOptions" role="group" aria-label="Answer choices"></div>
+          <div class="explain" id="qExplain" aria-live="polite">
+            <p class="verdict" id="qVerdict"></p>
+            <p id="qExplainText"></p>
+            <button class="btn btn-gold" id="nextBtn" type="button">Next</button>
+          </div>
+          <div class="spacer"></div>
+        </section>
+
+        <!-- SCORE -->
+        <section class="screen" id="screen-score" aria-label="Your score">
+          <div class="score-frame">
+            <div class="sf-kicker">Did You Catch It? &middot; Final Score</div>
+            <div class="score-big"><span id="scoreNum">0</span><small> / 3</small></div>
+            <div class="score-stars" id="scoreStars" aria-hidden="true"></div>
+            <p class="score-line" id="scoreLine"></p>
+          </div>
+          <div class="score-actions">
+            <button class="btn btn-primary" id="copyBtn" type="button">Copy Score</button>
+            <button class="btn btn-ghost" id="againBtn" type="button">Play Again</button>
+          </div>
+          <p class="copied-note" id="copiedNote" aria-live="polite"></p>
+          <div class="spacer"></div>
+          <div class="next-week">Next week: <b>1950, Phoenix</b> &mdash; same time, same stories.</div>
+        </section>
+
+      </div>
+
+      <footer class="credit">
+        Brought to you by the Epistoleus and the History &amp; Archives Committee, Sigma Gamma Rho Sorority, Inc., Western Region.
+      </footer>
+    </main>
+
+    <script>
+      (function () {
+        var QUESTIONS = [
+          {
+            text: "Who gave the welcome at the 1940 YMCA subscription banquet?",
+            correct: "Mary Lou Gardner",
+            wrong: ["Hattie McDaniel", "Ernest Whitman"],
+            explain: "One of our founders \u2014 Ernest Whitman was the toastmaster."
+          },
+          {
+            text: "What had Soror Hattie McDaniel just won in 1940?",
+            correct: "An Academy Award",
+            wrong: ["A recording contract", "A key to the city"],
+            explain: "The biggest prize in movies, and she was ours."
+          },
+          {
+            text: "Hattie McDaniel helped charter which Los Angeles chapter in 1939, the first chapter in what became the Western Region?",
+            correct: "Sigma Sigma",
+            wrong: ["Beta Mu Sigma", "Beta Theta Sigma"],
+            explain: "Sigma Sigma, chartered in 1939 \u2014 the first chapter in what became the Western Region."
+          }
+        ];
+
+        var LETTERS = ["A", "B", "C"];
+        var screens = {
+          cover: document.getElementById("screen-cover"),
+          q: document.getElementById("screen-q"),
+          score: document.getElementById("screen-score")
+        };
+        var segs = document.querySelectorAll("#progress span");
+        var qLabel = document.getElementById("qLabel");
+        var qDots = document.getElementById("qDots").children;
+        var qText = document.getElementById("qText");
+        var qOptions = document.getElementById("qOptions");
+        var qExplain = document.getElementById("qExplain");
+        var qVerdict = document.getElementById("qVerdict");
+        var qExplainText = document.getElementById("qExplainText");
+        var nextBtn = document.getElementById("nextBtn");
+        var copiedNote = document.getElementById("copiedNote");
+
+        var step = 0;        // 0 cover, 1-3 questions, 4 score
+        var current = 0;     // question index
+        var score = 0;
+        var answered = false;
+
+        function setProgress() {
+          for (var i = 0; i < segs.length; i++) {
+            segs[i].className = i < step ? "done" : (i === step ? "now" : "");
+          }
+        }
+        function show(name) {
+          screens.cover.classList.toggle("active", name === "cover");
+          screens.q.classList.toggle("active", name === "q");
+          screens.score.classList.toggle("active", name === "score");
+          setProgress();
+        }
+
+        function shuffledOptions(q) {
+          var opts = q.wrong.concat([q.correct]);
+          // Rotate by a per-question offset so the answer lands in a different slot each time.
+          var offset = (current * 2 + 1) % opts.length;
+          var out = [];
+          for (var i = 0; i < opts.length; i++) out.push(opts[(i + offset) % opts.length]);
+          return out;
+        }
+
+        function renderQuestion() {
+          answered = false;
+          var q = QUESTIONS[current];
+          qLabel.textContent = "Question " + (current + 1) + " of 3";
+          for (var d = 0; d < qDots.length; d++) {
+            qDots[d].className = d <= current ? "on" : "";
+          }
+          qText.textContent = q.text;
+          qExplain.classList.remove("show");
+          qOptions.innerHTML = "";
+          shuffledOptions(q).forEach(function (label, i) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "option";
+            b.innerHTML = "";
+            var letter = document.createElement("span");
+            letter.className = "letter";
+            letter.textContent = LETTERS[i];
+            var txt = document.createElement("span");
+            txt.textContent = label;
+            var mark = document.createElement("span");
+            mark.className = "mark";
+            b.appendChild(letter);
+            b.appendChild(txt);
+            b.appendChild(mark);
+            b.addEventListener("click", function () { answer(b, label, mark); });
+            qOptions.appendChild(b);
+          });
+          step = current + 1;
+          show("q");
+        }
+
+        function answer(btn, label, mark) {
+          if (answered) return;
+          answered = true;
+          var q = QUESTIONS[current];
+          var isRight = label === q.correct;
+          if (isRight) score++;
+          var buttons = qOptions.querySelectorAll(".option");
+          buttons.forEach(function (b) {
+            b.disabled = true;
+            var t = b.children[1].textContent;
+            if (t === q.correct) {
+              b.classList.add("correct");
+              b.children[2].textContent = "\u2713";
+            } else if (b === btn) {
+              b.classList.add("wrong");
+              b.children[2].textContent = "\u2717";
+            } else {
+              b.classList.add("dim");
+            }
+          });
+          qVerdict.textContent = isRight ? "You caught it!" : "Not quite \u2014 here\u2019s the story:";
+          qVerdict.classList.toggle("missed", !isRight);
+          qExplainText.textContent = q.explain;
+          nextBtn.textContent = current === QUESTIONS.length - 1 ? "See My Score" : "Next Question";
+          qExplain.classList.add("show");
+        }
+
+        function renderScore() {
+          step = 4;
+          document.getElementById("scoreNum").textContent = score;
+          var stars = "";
+          for (var i = 0; i < 3; i++) stars += i < score ? "\u2605" : "\u2606";
+          document.getElementById("scoreStars").textContent = stars;
+          document.getElementById("scoreLine").textContent =
+            "I caught " + score + " of 3 \u2014 1940, Los Angeles \u00B7 Mighty Western Region history";
+          copiedNote.textContent = "";
+          show("score");
+        }
+
+        document.getElementById("startBtn").addEventListener("click", function () {
+          current = 0; score = 0;
+          renderQuestion();
+        });
+        nextBtn.addEventListener("click", function () {
+          if (current < QUESTIONS.length - 1) {
+            current++;
+            renderQuestion();
+          } else {
+            renderScore();
+          }
+        });
+        document.getElementById("againBtn").addEventListener("click", function () {
+          step = 0;
+          show("cover");
+        });
+        document.getElementById("copyBtn").addEventListener("click", function () {
+          var text = "I caught " + score + " of 3 \u2014 1940, Los Angeles \u00B7 Mighty Western Region history";
+          function done() { copiedNote.textContent = "Score copied \u2014 paste it anywhere."; }
+          function fallback() {
+            var ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand("copy"); done(); }
+            catch (e) { copiedNote.textContent = text; }
+            document.body.removeChild(ta);
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done, fallback);
+          } else {
+            fallback();
+          }
+        });
+
+        setProgress();
+      })();
+    </script>
+  </body>
+</html>
