@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Western Region History Museum — Admin Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+<script type="module">
+/* The UMD address above is kept as specified; where it does not resolve, the same library (qrcode 1.5.4) is loaded here in module form from the same CDN and offered to the panel as window.QRCode. */
+try {
+  var qrModule = await import("https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm");
+  if (!window.QRCode || !window.QRCode.toDataURL) { window.QRCode = qrModule.default || qrModule; }
+  if (typeof window.__onQRReady === "function") { window.__onQRReady(); }
+} catch(e) { /* the QR screen keeps its plain link fallback */ }
+</script>
+<style>
+:root{
+  --blue:#0A1551; --gold:#D4AF37; --gold-dark:#b08d2e; --cream:#FFF8E7;
+  --bg:#FFFBF1; --ink:#1c2140; --muted:#5a5f7a; --line:#e7dcc0;
+  --red:#a12622; --green:#2e6b34;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:'Poppins',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.5}
+h1,h2,h3,.bebas{font-family:'Bebas Neue',sans-serif;letter-spacing:.04em;color:var(--blue);margin:0}
+h1{font-size:2rem} h2{font-size:1.55rem} h3{font-size:1.25rem}
+a{color:var(--blue)}
+button{font-family:inherit;cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:48px;padding:.65rem 1.2rem;border-radius:12px;border:2px solid var(--blue);background:var(--blue);color:#fff;font-size:1rem;font-weight:600;text-decoration:none}
+.btn:hover{opacity:.92}
+.btn.gold{background:var(--gold);border-color:var(--gold-dark);color:var(--blue)}
+.btn.plain{background:#fff;color:var(--blue)}
+.btn.red{background:#fff;border-color:var(--red);color:var(--red)}
+.btn.small{min-height:48px;padding:.5rem .9rem;font-size:.92rem}
+.btn:disabled{opacity:.55;cursor:default}
+input[type=text],input[type=email],input[type=password],input[type=date],input[type=number],select,textarea{width:100%;min-height:48px;padding:.6rem .8rem;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:1rem;background:#fff;color:var(--ink)}
+textarea{min-height:110px;resize:vertical}
+textarea.tall{min-height:200px}
+label{display:block;font-weight:600;margin:.9rem 0 .3rem;color:var(--blue)}
+label:first-child{margin-top:0}
+.hint{color:var(--muted);font-size:.92rem}
+.card{background:var(--cream);border:1.5px solid var(--line);border-radius:16px;padding:1.1rem 1.2rem;margin:0 0 1rem;box-shadow:0 2px 8px rgba(10,21,81,.06)}
+.card.white{background:#fff}
+.msg{border-radius:12px;padding:.8rem 1rem;margin:0 0 1rem;display:none}
+.msg.show{display:block}
+.msg.err{background:#fdeceb;border:1.5px solid #e5a09d;color:#7c1d18}
+.msg.ok{background:#e9f5ea;border:1.5px solid #9cc7a1;color:#1e4d24}
+.msg.info{background:#eef1fb;border:1.5px solid #b9c4e8;color:var(--blue)}
+.wrap{max-width:980px;margin:0 auto;padding:1rem}
+.topbar{background:var(--blue);color:#fff;padding:.9rem 1rem}
+.topbar .wrap{padding-top:0;padding-bottom:0;display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between}
+.topbar h1{color:#fff;font-size:1.6rem}
+.topbar .goldline{color:var(--gold);font-size:.85rem;letter-spacing:.14em;text-transform:uppercase}
+nav.mainnav{background:#fff;border-bottom:2px solid var(--gold);position:sticky;top:0;z-index:20}
+nav.mainnav .scroll{display:flex;gap:.5rem;overflow-x:auto;padding:.6rem 1rem;max-width:980px;margin:0 auto;-webkit-overflow-scrolling:touch}
+nav.mainnav button{flex:0 0 auto;min-height:48px;padding:.55rem 1rem;border-radius:999px;border:2px solid var(--blue);background:#fff;color:var(--blue);font-weight:600;font-size:.95rem}
+nav.mainnav button.active{background:var(--blue);color:#fff}
+.instruction{font-size:1.02rem;margin:.2rem 0 1rem;color:var(--ink)}
+.chip{display:inline-block;padding:.15rem .65rem;border-radius:999px;font-size:.8rem;font-weight:700;vertical-align:middle}
+.chip.pub{background:#e9f5ea;color:var(--green);border:1px solid #9cc7a1}
+.chip.draft{background:#fdf3d7;color:#7a5b12;border:1px solid var(--gold)}
+.chip.new{background:#fdeceb;color:#7c1d18;border:1px solid #e5a09d}
+.chip.hold{background:#fdf3d7;color:#7a5b12;border:1px solid var(--gold)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.8rem;margin-bottom:1rem}
+.bignum{background:var(--cream);border:1.5px solid var(--line);border-radius:16px;padding:1rem;text-align:center}
+.bignum .n{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;color:var(--blue);line-height:1}
+.bignum .l{font-size:.9rem;color:var(--muted);font-weight:600}
+.listitem{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:.9rem 1rem;margin-bottom:.7rem}
+.listitem .t{font-weight:700;color:var(--blue)}
+.flexrow{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+.spread{justify-content:space-between}
+.mt{margin-top:1rem}.mb{margin-bottom:1rem}
+img.preview{max-width:100%;border-radius:12px;border:1.5px solid var(--line);display:block}
+img.thumb{width:110px;height:110px;object-fit:cover;border-radius:10px;border:1.5px solid var(--line)}
+.switch{position:relative;display:inline-block;width:60px;height:34px;flex:0 0 auto}
+.switch input{opacity:0;width:0;height:0}
+.switch .track{position:absolute;inset:0;background:#c9cdd9;border-radius:999px;transition:.2s}
+.switch .track:before{content:"";position:absolute;width:26px;height:26px;left:4px;top:4px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked + .track{background:var(--blue)}
+.switch input:checked + .track:before{transform:translateX(26px)}
+.seg{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+.seg button{min-height:48px;padding:.55rem 1rem;border-radius:999px;border:2px solid var(--blue);background:#fff;color:var(--blue);font-weight:600}
+.seg button.active{background:var(--blue);color:#fff}
+.qrimg{width:100%;max-width:320px;display:block;margin:.6rem auto;background:#fff}
+.previewbox{background:#fff;border:2px dashed var(--gold);border-radius:16px;padding:1.1rem}
+.previewbox .phead{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;color:var(--blue);line-height:1.15}
+.kv{font-size:.92rem;color:var(--muted)}
+.kv b{color:var(--ink)}
+.hidden{display:none !important}
+.signin-wrap{max-width:520px;margin:2.2rem auto;padding:0 1rem}
+.signin-card{background:var(--cream);border:2px solid var(--gold);border-radius:20px;padding:1.6rem;box-shadow:0 6px 24px rgba(10,21,81,.12)}
+footer{padding:1.4rem 1rem 2.4rem;text-align:center;color:var(--muted);font-size:.88rem}
+audio{width:100%;margin:.4rem 0}
+@media (max-width:560px){ h1{font-size:1.6rem} .bignum .n{font-size:2rem} }
+</style>
+</head>
+<body>
+
+<!-- ===================== SIGN-IN ===================== -->
+<div id="signinView">
+  <div class="topbar"><div class="wrap">
+    <div><div class="goldline">Sigma Gamma Rho Sorority, Inc. · Western Region</div><h1>Western Region History Museum</h1></div>
+  </div></div>
+  <div class="signin-wrap">
+    <div class="signin-card">
+      <h2>Admin sign-in</h2>
+      <p class="instruction">Sign in with your email and password. Only people on the admins list can come in.</p>
+      <div id="signinMsg" class="msg"></div>
+      <form id="signinForm">
+        <label for="si_email">Email</label>
+        <input type="email" id="si_email" autocomplete="username" required>
+        <label for="si_password">Password</label>
+        <input type="password" id="si_password" autocomplete="current-password" required>
+        <div class="mt"><button class="btn" type="submit" id="si_btn" style="width:100%">Sign in</button></div>
+      </form>
+      <hr style="border:none;border-top:1.5px solid var(--line);margin:1.3rem 0">
+      <h3>Locked out?</h3>
+      <p class="hint">Use the email above and we will send you a one-time sign-in link instead.</p>
+      <button class="btn plain" id="magicBtn" type="button" style="width:100%">Email me a sign-in link instead</button>
+    </div>
+    <p class="hint" style="text-align:center;margin-top:1rem">The museum itself is at <a href="https://wrhistorymuseum.github.io/interactive-3d-museum/" target="_blank" rel="noopener">wrhistorymuseum.github.io/interactive-3d-museum</a></p>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="appView" class="hidden">
+  <div class="topbar"><div class="wrap">
+    <div><div class="goldline">Western Region History Museum</div><h1>Admin Panel</h1></div>
+    <div class="flexrow">
+      <span id="whoAmI" style="font-size:.92rem"></span>
+      <button class="btn gold small" id="pwToggle" type="button">Set or change my password</button>
+      <button class="btn plain small" id="signOutBtn" type="button">Sign out</button>
+    </div>
+  </div></div>
+
+  <div id="pwCard" class="wrap hidden" style="padding-bottom:0">
+    <div class="card">
+      <h3>Set or change my password</h3>
+      <label for="newPw">New password</label>
+      <input type="password" id="newPw" autocomplete="new-password">
+      <div class="flexrow mt"><button class="btn" id="pwSave" type="button">Save my password</button><span id="pwMsg" class="hint"></span></div>
+    </div>
+  </div>
+
+  <nav class="mainnav"><div class="scroll" id="mainNav">
+    <button data-screen="home" class="active" type="button">Home / Numbers</button>
+    <button data-screen="stories" type="button">Stories &amp; Rooms</button>
+    <button data-screen="entrance" type="button">Entrance</button>
+    <button data-screen="submissions" type="button">Submissions</button>
+    <button data-screen="files" type="button">Files</button>
+    <button data-screen="quizzes" type="button">Quizzes</button>
+    <button data-screen="members" type="button">Members</button>
+    <button data-screen="admins" type="button">Admins</button>
+    <button data-screen="activity" type="button">Activity</button>
+    <button data-screen="backup" type="button">Backup &amp; Restore</button>
+    <button data-screen="qr" type="button">QR Codes</button>
+    <button data-screen="guide" type="button">Handoff Guide</button>
+  </div></nav>
+
+  <div class="wrap">
+    <div id="appMsg" class="msg"></div>
+
+    <!-- ===== (a) HOME / NUMBERS ===== -->
+    <section id="screen-home" class="screen">
+      <p class="instruction">See how the museum is doing. Pick a stretch of days, and the numbers below follow it.</p>
+      <div class="seg" id="rangeSeg">
+        <button data-days="7" type="button">Last 7 days</button>
+        <button data-days="30" class="active" type="button">Last 30 days</button>
+        <button data-days="90" type="button">Last 90 days</button>
+        <button data-days="0" type="button">All time</button>
+      </div>
+      <div id="homeLoading" class="card">Getting the numbers…</div>
+      <div id="homeBody" class="hidden">
+        <div class="grid">
+          <div class="bignum"><div class="n" id="nVisits">–</div><div class="l">Visits</div></div>
+          <div class="bignum"><div class="n" id="nSignedIn">–</div><div class="l">People signed in</div><div class="hint" id="nSignedInDetail"></div></div>
+          <div class="bignum"><div class="n" id="nVisitors">–</div><div class="l">Visitors</div></div>
+          <div class="bignum"><div class="n" id="nAvg">–</div><div class="l">Average visit length</div></div>
+          <div class="bignum"><div class="n" id="nStories">–</div><div class="l">Stories opened</div></div>
+          <div class="bignum"><div class="n" id="nRooms">–</div><div class="l">Rooms entered</div></div>
+        </div>
+        <div class="card white">
+          <h3>Waiting for review</h3>
+          <p><span class="bebas" style="font-size:2rem" id="nWaiting">–</span> &nbsp;pieces sent in by visitors are waiting on the Submissions screen.</p>
+          <button class="btn gold" type="button" data-goto="submissions">Go to Submissions</button>
+        </div>
+        <div class="card">
+          <h3>Most-opened stories</h3>
+          <div id="topStories"><p class="hint">Nothing yet.</p></div>
+        </div>
+        <div class="card">
+          <h3>Rooms</h3>
+          <div id="topRooms"><p class="hint">Nothing yet.</p></div>
+        </div>
+        <div class="card">
+          <h3>Chapters in the museum</h3>
+          <div id="chapterList"><p class="hint">Nothing yet.</p></div>
+        </div>
+        <div class="card white">
+          <h3>More counts</h3>
+          <div class="grid">
+            <div class="bignum"><div class="n" id="cPassports">–</div><div class="l">Passport holders</div></div>
+            <div class="bignum"><div class="n" id="cGuestbook">–</div><div class="l">Guest book signatures</div></div>
+            <div class="bignum"><div class="n" id="cCheckins">–</div><div class="l">Chapter check-ins</div></div>
+            <div class="bignum"><div class="n" id="cQuizPlays">–</div><div class="l">Quiz plays</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== (b) STORIES & ROOMS ===== -->
+    <section id="screen-stories" class="screen hidden">
+      <p class="instruction">Find a story, open it, and change its words, photo, or recording. Save a draft first, then publish when it looks right.</p>
+      <div class="card">
+        <h3>Rooms</h3>
+        <div id="roomsList"><p class="hint">Loading rooms…</p></div>
+        <hr style="border:none;border-top:1.5px solid var(--line);margin:1rem 0">
+        <label for="newRoomName">Add a room — its name</label>
+        <div class="flexrow"><input type="text" id="newRoomName" style="flex:1;min-width:200px" placeholder="Name of the new room"><button class="btn" id="addRoomBtn" type="button">Add a room</button></div>
+        <p class="hint mt">A new room appears in the museum's list right away; its doorway dressing is plainer than the finished rooms.</p>
+      </div>
+      <div class="card white">
+        <div class="flexrow spread"><h3>Stories</h3><button class="btn gold" id="addStoryBtn" type="button">Add a story</button></div>
+        <label for="storySearch">Search stories</label>
+        <input type="text" id="storySearch" placeholder="Type part of a title…">
+        <div id="storyList" class="mt"><p class="hint">Loading stories…</p></div>
+      </div>
+      <div id="editorCard" class="card hidden">
+        <h3 id="editorTitle">Edit story</h3>
+        <p class="hint">The form follows the kind of piece. Only the fields your kind uses are saved.</p>
+        <input type="hidden" id="f_key">
+        <label for="f_kind">Kind of piece</label>
+        <select id="f_kind">
+          <option value="hall">Hall clipping (newspaper story)</option>
+          <option value="piece">Room piece (photo story)</option>
+          <option value="syntaktes">Syntaktes portrait</option>
+          <option value="aurora">Aurora clipping</option>
+        </select>
+        <label for="f_area">Room</label>
+        <select id="f_area"></select>
+        <div id="pieceAreasWrap" class="hidden">
+          <label for="f_areas">Also hangs in these rooms (comma-separated room names like region, lessie)</label>
+          <input type="text" id="f_areas">
+        </div>
+        <label for="f_headline">Headline / title / name</label>
+        <input type="text" id="f_headline">
+        <div class="flexrow">
+          <div style="flex:1;min-width:130px"><label for="f_year">Year</label><input type="text" id="f_year"></div>
+          <div style="flex:1;min-width:130px"><label for="f_date">Date shown</label><input type="text" id="f_date"></div>
+          <div style="flex:1;min-width:130px"><label for="f_page">Page</label><input type="text" id="f_page"></div>
+        </div>
+        <div class="flexrow">
+          <div style="flex:1;min-width:150px"><label for="f_paper">Paper</label><input type="text" id="f_paper"></div>
+          <div style="flex:1;min-width:150px"><label for="f_city">City</label><input type="text" id="f_city"></div>
+        </div>
+        <label for="f_deck">Deck (the line under the headline)</label>
+        <input type="text" id="f_deck">
+        <label for="f_pillars">Pillars</label>
+        <input type="text" id="f_pillars">
+        <div class="flexrow">
+          <div style="flex:1;min-width:150px"><label for="f_meta">Meta line</label><input type="text" id="f_meta"></div>
+          <div style="flex:1;min-width:150px"><label for="f_excerptLabel">Label above the words</label><input type="text" id="f_excerptLabel"></div>
+        </div>
+        <label for="f_line">Short line</label>
+        <input type="text" id="f_line">
+        <div class="flexrow">
+          <div style="flex:1;min-width:150px"><label for="f_role">Role (Syntaktes portraits)</label><input type="text" id="f_role"></div>
+          <div style="flex:1;min-width:150px"><label for="f_years">Years of service (Syntaktes portraits)</label><input type="text" id="f_years"></div>
+        </div>
+        <label for="f_quiz">Linked quiz page name</label>
+        <input type="text" id="f_quiz">
+        <label for="f_cap">Photo caption</label>
+        <input type="text" id="f_cap">
+        <label for="f_alt">Photo description (alt text)</label>
+        <input type="text" id="f_alt">
+        <label for="f_thread">Thread</label>
+        <textarea id="f_thread"></textarea>
+        <label for="f_threadLabel">Thread label</label>
+        <input type="text" id="f_threadLabel">
+        <label for="f_source">Source line</label>
+        <input type="text" id="f_source">
+        <label for="f_metaHTML">Meta block (Aurora clippings, as written)</label>
+        <textarea id="f_metaHTML"></textarea>
+
+        <hr style="border:none;border-top:1.5px solid var(--line);margin:1.2rem 0">
+        <h3>Main photo</h3>
+        <div id="mainPhotoPreview"><p class="hint">No photo yet.</p></div>
+        <label for="mainPhotoUpload">Upload a new photo</label>
+        <input type="file" id="mainPhotoUpload" accept="image/*">
+        <label for="f_file">Photo link (filled in by the upload, or paste a link)</label>
+        <input type="text" id="f_file">
+
+        <div id="auroraSecondWrap">
+          <h3 class="mt">Second photo (Aurora clippings)</h3>
+          <div id="secondPhotoPreview"><p class="hint">No second photo.</p></div>
+          <label for="secondPhotoUpload">Upload a second photo</label>
+          <input type="file" id="secondPhotoUpload" accept="image/*">
+          <label for="f_file2">Second photo link</label>
+          <input type="text" id="f_file2">
+          <label for="f_alt2">Second photo description</label>
+          <input type="text" id="f_alt2">
+          <label for="f_cap2">Second photo caption</label>
+          <input type="text" id="f_cap2">
+        </div>
+
+        <div id="pieceImgsWrap">
+          <hr style="border:none;border-top:1.5px solid var(--line);margin:1.2rem 0">
+          <h3>Photos for this piece</h3>
+          <p class="hint">Each photo carries its own caption. Add as many as the piece needs.</p>
+          <div id="pieceImgs"></div>
+          <label for="pieceImgUpload">Add a photo</label>
+          <input type="file" id="pieceImgUpload" accept="image/*">
+        </div>
+
+        <hr style="border:none;border-top:1.5px solid var(--line);margin:1.2rem 0">
+        <h3>The words</h3>
+        <label for="f_excerpt">Story words (excerpt / article text)</label>
+        <textarea id="f_excerpt" class="tall"></textarea>
+        <label for="f_scene">Scene — what happened</label>
+        <textarea id="f_scene"></textarea>
+        <label for="f_lands">What the record shows</label>
+        <textarea id="f_lands"></textarea>
+        <label for="f_body">Body paragraphs (one blank line between paragraphs)</label>
+        <textarea id="f_body" class="tall"></textarea>
+        <label for="f_note">Note</label>
+        <textarea id="f_note"></textarea>
+
+        <hr style="border:none;border-top:1.5px solid var(--line);margin:1.2rem 0">
+        <h3>Recording — Listen to the Article</h3>
+        <div id="narrationBox"><p class="hint">No recording yet.</p></div>
+        <label for="narrationUpload">Upload a recording</label>
+        <input type="file" id="narrationUpload" accept="audio/*">
+        <input type="hidden" id="f_narration">
+        <div class="flexrow mt"><button class="btn red small" id="narrationRemove" type="button">Remove recording</button></div>
+
+        <hr style="border:none;border-top:1.5px solid var(--line);margin:1.2rem 0">
+        <div class="flexrow">
+          <button class="btn plain" id="saveDraftBtn" type="button">Save as draft</button>
+          <button class="btn gold" id="publishBtn" type="button">Publish</button>
+          <button class="btn plain" id="previewBtn" type="button">Preview</button>
+          <button class="btn red" id="deleteStoryBtn" type="button">Delete story</button>
+        </div>
+        <div id="storyPreview" class="mt"></div>
+      </div>
+    </section>
+
+    <!-- ===== (c) ENTRANCE ===== -->
+    <section id="screen-entrance" class="screen hidden">
+      <p class="instruction">Change the words on the museum's front door, the messages that greet visitors, and the order of the door's pieces.</p>
+      <div class="card">
+        <h3>Welcome words</h3>
+        <label for="w_title">Title</label>
+        <input type="text" id="w_title">
+        <label for="w_series">Series line</label>
+        <input type="text" id="w_series">
+        <label for="w_lede">Opening paragraph</label>
+        <textarea id="w_lede" class="tall"></textarea>
+        <label for="w_directions">Directions</label>
+        <textarea id="w_directions"></textarea>
+        <label>How to explore — the four steps</label>
+        <input type="text" id="w_how1" placeholder="Step 1"><div style="height:.5rem"></div>
+        <input type="text" id="w_how2" placeholder="Step 2"><div style="height:.5rem"></div>
+        <input type="text" id="w_how3" placeholder="Step 3"><div style="height:.5rem"></div>
+        <input type="text" id="w_how4" placeholder="Step 4">
+        <label for="w_note">Viewing note</label>
+        <textarea id="w_note"></textarea>
+        <label for="w_credit">Credit line</label>
+        <input type="text" id="w_credit">
+        <label for="w_enterLabel">Enter button words</label>
+        <input type="text" id="w_enterLabel">
+        <label for="w_enterDir">Enter button direction line</label>
+        <input type="text" id="w_enterDir">
+        <div class="mt"><button class="btn gold" id="welcomeSave" type="button">Save welcome words</button></div>
+        <hr style="border:none;border-top:1.5px solid var(--line);margin:1.2rem 0">
+        <h3>Guest book &amp; check-in button words</h3>
+        <label for="gb_label">Guest book button words</label>
+        <input type="text" id="gb_label">
+        <label for="gb_dir">Guest book direction line</label>
+        <input type="text" id="gb_dir">
+        <label for="ci_label">Chapter check-in button words</label>
+        <input type="text" id="ci_label">
+        <label for="ci_dir">Chapter check-in direction line</label>
+        <input type="text" id="ci_dir">
+        <div class="mt"><button class="btn" id="doorButtonsSave" type="button">Save button words</button></div>
+      </div>
+
+      <div class="card white">
+        <h3>Entrance messages</h3>
+        <p class="hint">The message shows at the museum entrance between its start and end dates.</p>
+        <div id="annList"><p class="hint">Loading messages…</p></div>
+        <hr style="border:none;border-top:1.5px solid var(--line);margin:1rem 0">
+        <input type="hidden" id="ann_key">
+        <label for="ann_text">Message</label>
+        <textarea id="ann_text"></textarea>
+        <div class="flexrow">
+          <div style="flex:1;min-width:150px"><label for="ann_from">Start date</label><input type="date" id="ann_from"></div>
+          <div style="flex:1;min-width:150px"><label for="ann_to">End date</label><input type="date" id="ann_to"></div>
+        </div>
+        <div class="flexrow mt">
+          <button class="btn plain" id="annSaveDraft" type="button">Save message as draft</button>
+          <button class="btn gold" id="annPublish" type="button">Publish message</button>
+          <button class="btn plain" id="annClear" type="button">Start a new message</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Entrance pieces — order &amp; switches</h3>
+        <p class="hint">Order and switches are saved here; the welcome words and announcements above reach the museum right away.</p>
+        <div id="entrancePieces"><p class="hint">Loading the door's pieces…</p></div>
+      </div>
+    </section>
+
+    <!-- ===== (d) SUBMISSIONS ===== -->
+    <section id="screen-submissions" class="screen hidden">
+      <p class="instruction">Nothing a visitor sends appears in the museum until a person approves it here.</p>
+      <p class="hint">Approving keeps the piece ready for History &amp; Archives to place; placement into a corner happens from Stories &amp; Rooms and the corner lists.</p>
+      <div class="seg" id="subSeg">
+        <button data-f="new" class="active" type="button">New</button>
+        <button data-f="approved" type="button">Approved</button>
+        <button data-f="on hold" type="button">On hold</button>
+        <button data-f="rejected" type="button">Rejected</button>
+        <button data-f="all" type="button">All</button>
+      </div>
+      <p><span class="bebas" style="font-size:1.8rem" id="subNewCount">–</span> waiting as new.</p>
+      <div id="subList"><p class="hint">Loading what visitors sent…</p></div>
+    </section>
+
+    <!-- ===== (e) FILES ===== -->
+    <section id="screen-files" class="screen hidden">
+      <p class="instruction">Every photo and recording the panel has saved lives here. Upload more, copy a link, or take one down.</p>
+      <div class="card">
+        <label for="fileUpload">Upload files</label>
+        <input type="file" id="fileUpload" multiple>
+        <div class="mt"><button class="btn gold" id="fileUploadBtn" type="button">Upload these files</button></div>
+      </div>
+      <div id="fileList"><p class="hint">Loading files…</p></div>
+    </section>
+
+    <!-- ===== (f) QUIZZES ===== -->
+    <section id="screen-quizzes" class="screen hidden">
+      <p class="instruction">Edit the question at the end of each room. Pick which answer is right, and write what visitors hear for a right or wrong pick.</p>
+      <div id="quizEditors"><p class="hint">Loading the room questions…</p></div>
+      <div class="card white">
+        <h3>Chapter quiz board</h3>
+        <p class="hint">Standings from the chapter challenge, as they stand. This part is read-only here.</p>
+        <div id="chapterBoard"><p class="hint">Loading standings…</p></div>
+      </div>
+      <p class="hint">The big Did You Catch It? quiz pages are fixed pages for now; the questions in the rooms are the ones edited here.</p>
+    </section>
+
+    <!-- ===== (g) MEMBERS ===== -->
+    <section id="screen-members" class="screen hidden">
+      <p class="instruction">Everyone with a museum account. Send a fresh sign-in link or a password reset, or turn an account off.</p>
+      <label for="memberSearch">Search by email, name, or chapter</label>
+      <input type="text" id="memberSearch" placeholder="Type to search…">
+      <div id="memberList" class="mt"><p class="hint">Loading members…</p></div>
+    </section>
+
+    <!-- ===== (h) ADMINS ===== -->
+    <section id="screen-admins" class="screen hidden">
+      <p class="instruction">The people on this list are the only ones who can sign in to this panel.</p>
+      <div id="adminWarn" class="msg info"></div>
+      <div id="adminList"><p class="hint">Loading the admins list…</p></div>
+      <div class="card">
+        <h3>Add an admin</h3>
+        <label for="adm_name">Name</label>
+        <input type="text" id="adm_name">
+        <label for="adm_email">Email</label>
+        <input type="email" id="adm_email">
+        <div class="mt"><button class="btn gold" id="admAdd" type="button">Add to the admins list</button></div>
+        <p class="hint mt">They sign in with that email, then set their own password from the sign-in link email.</p>
+      </div>
+    </section>
+
+    <!-- ===== (i) ACTIVITY ===== -->
+    <section id="screen-activity" class="screen hidden">
+      <p class="instruction">The latest changes made in this panel — who made them, and when.</p>
+      <div id="activityList"><p class="hint">Loading the latest changes…</p></div>
+    </section>
+
+    <!-- ===== (j) BACKUP & RESTORE ===== -->
+    <section id="screen-backup" class="screen hidden">
+      <p class="instruction">Save a full copy of the museum's words and stories, or bring one back if something was changed by mistake.</p>
+      <div class="card">
+        <h3>Download a backup</h3>
+        <p class="hint">One file holding every story, room, and setting saved in the museum's records.</p>
+        <button class="btn gold" id="backupBtn" type="button">Download a backup</button>
+        <span id="backupMsg" class="hint"></span>
+      </div>
+      <div class="card white">
+        <h3>Restore from a backup</h3>
+        <label for="restoreFile">Pick a backup file</label>
+        <input type="file" id="restoreFile" accept=".json,application/json">
+        <div id="restoreInfo" class="mt"></div>
+        <div class="mt"><button class="btn red hidden" id="restoreConfirm" type="button">Yes, restore this backup</button></div>
+      </div>
+    </section>
+
+    <!-- ===== (k) QR CODES ===== -->
+    <section id="screen-qr" class="screen hidden">
+      <p class="instruction">Print-ready codes for the museum's pages. Download one and it is ready for a program, a flyer, or a display card.</p>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr))" id="qrGrid"></div>
+    </section>
+
+    <!-- ===== (l) HANDOFF GUIDE ===== -->
+    <section id="screen-guide" class="screen hidden">
+      <p class="instruction">Keep this page. It says what the museum is made of, who owns what, and what to do each month.</p>
+      <div class="card">
+        <h3>What the museum is made of</h3>
+        <p>The museum pages live on GitHub Pages at wrhistorymuseum.github.io. The words, stories, and numbers live in the museum's Supabase project, the one this panel signs into. This panel is the admin page of the same site, so keeping the museum current never needs a rebuild: change it here, and the museum reads the change.</p>
+        <h3 class="mt">Who owns what</h3>
+        <p>Site account: the region's GitHub account, wrhistorymuseum, on the Epistoleus email. Back end: the Supabase project under the DG Premier account. Moving the back end to a role account is the standing Phase 3 step, so a future handoff moves accounts, not the museum.</p>
+        <h3 class="mt">How to add the next admin</h3>
+        <p>Open the Admins screen, add their name and email, and they are on the list. They sign in with that email, use “Email me a sign-in link instead” on the sign-in screen the first time, then set their own password with “Set or change my password” at the top of the panel. Always keep at least two admins on the list.</p>
+        <h3 class="mt">What to do each month</h3>
+        <p>Check Submissions and approve, hold, or reject everything waiting. Download a backup from Backup &amp; Restore and keep the file somewhere safe. Glance at Home / Numbers so the region can say how the museum is doing.</p>
+        <h3 class="mt">If you are locked out</h3>
+        <p>Use “Email me a sign-in link instead” on the sign-in screen. The link signs you in once; set a fresh password right away with “Set or change my password.” If no admin can get in at all, the person who holds the back-end account can add an email back to the admins list from that account.</p>
+        <h3 class="mt">The four links worth keeping</h3>
+        <p>Museum: https://wrhistorymuseum.github.io/interactive-3d-museum/<br>
+        Passport: https://wrhistorymuseum.github.io/passport/<br>
+        The Journey West: https://wrhistorymuseum.github.io/timeline/<br>
+        Did You Catch It? Quiz: https://wrhistorymuseum.github.io/did-you-catch-it-quiz/</p>
+      </div>
+    </section>
+  </div>
+  <footer>Western Region History Museum · Admin Panel · Sigma Gamma Rho Sorority, Inc., Western Region</footer>
+</div>
+
+<script>
+"use strict";
+var SUPABASE_URL = "https://wlyfawqpsozcclwztmpv.supabase.co";
+var SUPABASE_KEY = "sb_publishable_EEypoHRVCHw5hAlOV77lZA_g7Xtf9Pw";
+var PANEL_URL = window.location.href.split("#")[0].split("?")[0];
+var LINKS = {
+  museum: "https://wrhistorymuseum.github.io/interactive-3d-museum/",
+  passport: "https://wrhistorymuseum.github.io/passport/",
+  timeline: "https://wrhistorymuseum.github.io/timeline/",
+  quiz: "https://wrhistorymuseum.github.io/did-you-catch-it-quiz/"
+};
+var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+var currentUser = null;
+var currentAdmin = null;
+var allContent = [];
+var subFilter = "new";
+var rangeDays = 30;
+var pendingRestore = null;
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ if(s===null||s===undefined) return ""; return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function slugify(s){ return String(s||"untitled").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,60) || "untitled"; }
+function fmtDate(v){ if(!v) return ""; var d = new Date(v); if(isNaN(d)) return String(v); return d.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}) + " " + d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}); }
+function fmtDay(v){ if(!v) return ""; var d = new Date(v); if(isNaN(d)) return String(v); return d.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}); }
+function fmtSize(n){ if(n===null||n===undefined) return ""; if(n<1024) return n+" B"; if(n<1048576) return (n/1024).toFixed(1)+" KB"; return (n/1048576).toFixed(1)+" MB"; }
+function showMsg(el, text, kind){ if(!el) return; el.textContent = text||""; el.className = "msg show " + (kind||"info"); if(!text) el.className="msg"; }
+function appMsg(text, kind){ showMsg($("appMsg"), text, kind); window.scrollTo({top:0,behavior:"smooth"}); }
+function errText(e){ return (e && e.message) ? e.message : "Something went wrong. Please try again."; }
+function contentByKey(k){ for(var i=0;i<allContent.length;i++){ if(allContent[i].key===k) return allContent[i]; } return null; }
+function areaName(id){ var a = contentByKey("area:"+id); if(a && a.value && a.value.name) return a.value.name; return id||""; }
+function looksAudio(path){ return /\.(mp3|wav|m4a|ogg|oga|webm)$/i.test(String(path||"")); }
+function looksImage(path){ return /\.(png|jpe?g|gif|webp|svg)$/i.test(String(path||"")); }
+
+async function logActivity(action, detail){
+  try{
+    await sb.from("activity_log").insert({ admin_email: currentUser ? currentUser.email : "", action: action, detail: detail || "" });
+  }catch(e){ /* the change itself already saved; a missed note never blocks the panel */ }
+}
+
+async function uploadToUploads(file){
+  var safe = String(file.name||"file").replace(/[^a-zA-Z0-9._-]+/g,"-");
+  var path = Date.now() + "-" + safe;
+  var res = await sb.storage.from("museum-uploads").upload(path, file);
+  if(res.error) throw res.error;
+  var pub = sb.storage.from("museum-uploads").getPublicUrl(path);
+  var url = pub && pub.data ? pub.data.publicUrl : "";
+  return url;
+}
+
+/* ---------------- Sign-in ---------------- */
+async function verifyAdmin(user){
+  var res = await sb.from("admins").select("*").eq("email", user.email);
+  if(res.error){ showMsg($("signinMsg"), errText(res.error), "err"); return false; }
+  var found = (res.data||[])[0];
+  if(!found){
+    showMsg($("signinMsg"), "This email is not on the admins list.", "err");
+    try{ await sb.auth.signOut(); }catch(e){}
+    currentUser = null; currentAdmin = null;
+    $("appView").classList.add("hidden"); $("signinView").classList.remove("hidden");
+    return false;
+  }
+  currentUser = user; currentAdmin = found;
+  $("whoAmI").textContent = (found.name ? found.name + " · " : "") + user.email;
+  $("signinView").classList.add("hidden"); $("appView").classList.remove("hidden");
+  showScreen("home");
+  return true;
+}
+$("signinForm").addEventListener("submit", async function(ev){
+  ev.preventDefault();
+  var email = $("si_email").value.trim(), pw = $("si_password").value;
+  $("si_btn").disabled = true; showMsg($("signinMsg"), "Signing you in…", "info");
+  var res = await sb.auth.signInWithPassword({ email: email, password: pw });
+  $("si_btn").disabled = false;
+  if(res.error){ showMsg($("signinMsg"), errText(res.error), "err"); return; }
+  showMsg($("signinMsg"), "", "info");
+  await verifyAdmin(res.data.user);
+});
+$("magicBtn").addEventListener("click", async function(){
+  var email = $("si_email").value.trim();
+  if(!email){ showMsg($("signinMsg"), "Type your email above first, then use this button.", "err"); return; }
+  var res = await sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: PANEL_URL } });
+  if(res.error){ showMsg($("signinMsg"), errText(res.error), "err"); return; }
+  showMsg($("signinMsg"), "Check your email — a sign-in link is on its way to " + email + ".", "ok");
+});
+$("signOutBtn").addEventListener("click", async function(){
+  try{ await sb.auth.signOut(); }catch(e){}
+  currentUser = null; currentAdmin = null;
+  $("appView").classList.add("hidden"); $("signinView").classList.remove("hidden");
+});
+$("pwToggle").addEventListener("click", function(){ $("pwCard").classList.toggle("hidden"); });
+$("pwSave").addEventListener("click", async function(){
+  var pw = $("newPw").value;
+  if(!pw || pw.length < 6){ $("pwMsg").textContent = "Please use at least 6 characters."; return; }
+  var res = await sb.auth.updateUser({ password: pw });
+  if(res.error){ $("pwMsg").textContent = errText(res.error); return; }
+  $("pwMsg").textContent = "Your password is saved.";
+  $("newPw").value = "";
+  await logActivity("Set or changed password", currentUser ? currentUser.email : "");
+});
+sb.auth.onAuthStateChange(function(event, session){
+  if(session && session.user && !currentUser){ verifyAdmin(session.user); }
+});
+async function initSession(){
+  try{
+    var res = await sb.auth.getSession();
+    var session = res && res.data ? res.data.session : null;
+    if(session && session.user){ await verifyAdmin(session.user); }
+  }catch(e){ /* stay on the sign-in screen */ }
+}
+if(document.readyState === "loading"){ document.addEventListener("DOMContentLoaded", initSession); }
+else { initSession(); }
+
+/* ---------------- Navigation ---------------- */
+function showScreen(name){
+  var screens = document.querySelectorAll(".screen");
+  for(var i=0;i<screens.length;i++){ screens[i].classList.add("hidden"); }
+  var target = $("screen-"+name); if(target) target.classList.remove("hidden");
+  var btns = document.querySelectorAll("#mainNav button");
+  for(var j=0;j<btns.length;j++){ btns[j].classList.toggle("active", btns[j].getAttribute("data-screen")===name); }
+  showMsg($("appMsg"), "", "info");
+  if(name==="home" && typeof loadHome==="function") loadHome();
+  if(name==="stories") loadContent(typeof renderStoriesScreen==="function" ? renderStoriesScreen : null);
+  if(name==="entrance") loadContent(typeof renderEntrance==="function" ? renderEntrance : null);
+  if(name==="submissions" && typeof loadSubmissions==="function") loadSubmissions();
+  if(name==="files" && typeof loadFiles==="function") loadFiles();
+  if(name==="quizzes" && typeof loadQuizzes==="function") loadQuizzes();
+  if(name==="members" && typeof loadMembers==="function") loadMembers();
+  if(name==="admins" && typeof loadAdmins==="function") loadAdmins();
+  if(name==="activity" && typeof loadActivity==="function") loadActivity();
+  if(name==="qr" && typeof renderQR==="function") renderQR();
+}
+$("mainNav").addEventListener("click", function(ev){
+  var b = ev.target.closest("button"); if(!b) return;
+  showScreen(b.getAttribute("data-screen"));
+});
+document.addEventListener("click", function(ev){
+  var g = ev.target.closest("[data-goto]"); if(g) showScreen(g.getAttribute("data-goto"));
+});
+
+async function loadContent(done){
+  try{
+    var res = await sb.from("museum_content").select("*");
+    if(res.error) throw res.error;
+    allContent = res.data || [];
+  }catch(e){ appMsg("The museum's saved pieces could not be loaded. " + errText(e), "err"); allContent = []; }
+  if(done) done();
+}
+</script>
+
+<script>
+"use strict";
+/* ---------------- (a) Home / Numbers ---------------- */
+$("rangeSeg").addEventListener("click", function(ev){
+  var b = ev.target.closest("button"); if(!b) return;
+  rangeDays = parseInt(b.getAttribute("data-days"), 10) || 0;
+  var btns = document.querySelectorAll("#rangeSeg button");
+  for(var i=0;i<btns.length;i++) btns[i].classList.toggle("active", btns[i]===b);
+  loadHome();
+});
+function inRange(v){
+  if(!rangeDays) return true;
+  var d = new Date(v); if(isNaN(d)) return false;
+  return d.getTime() >= Date.now() - rangeDays*86400000;
+}
+async function safeSelect(name, orderCol){
+  try{
+    var q = sb.from(name).select("*");
+    if(orderCol) q = q.order(orderCol, { ascending: false });
+    var res = await q;
+    if(res.error) return [];
+    return res.data || [];
+  }catch(e){ return []; }
+}
+async function loadHome(){
+  $("homeLoading").classList.remove("hidden"); $("homeBody").classList.add("hidden");
+  var usage = await safeSelect("museum_usage");
+  var checkins = await safeSelect("chapter_checkins");
+  var walkers = await safeSelect("passport_walkers");
+  var guestbook = await safeSelect("guestbook");
+  var quizRows = await safeSelect("chapter_quiz");
+  var subs = await safeSelect("museum_submissions");
+  var u = usage.filter(function(r){ return inRange(r.created_at); });
+  var starts = u.filter(function(r){ return r.event_type==="session_start"; }).length;
+  var visitsFallback = u.filter(function(r){ return r.event_type==="visit"; }).length;
+  $("nVisits").textContent = starts || visitsFallback;
+  var signIns = u.filter(function(r){ return r.event_type==="sign_in"; });
+  var emails = {};
+  signIns.forEach(function(r){ if(r.user_email) emails[r.user_email]=1; });
+  $("nSignedIn").textContent = Object.keys(emails).length;
+  $("nSignedInDetail").textContent = signIns.length + " sign-ins in all";
+  var sessions = {};
+  u.forEach(function(r){ if(r.session_id){ (sessions[r.session_id] = sessions[r.session_id]||[]).push(r); } });
+  $("nVisitors").textContent = Object.keys(sessions).length;
+  var totalMs = 0, counted = 0;
+  Object.keys(sessions).forEach(function(k){
+    var times = sessions[k].map(function(r){ return new Date(r.created_at).getTime(); }).filter(function(t){ return !isNaN(t); });
+    if(times.length){ totalMs += Math.max.apply(null,times) - Math.min.apply(null,times); counted++; }
+  });
+  if(counted){
+    var secs = Math.round(totalMs/counted/1000);
+    $("nAvg").textContent = Math.floor(secs/60) + "m " + (secs%60) + "s";
+  } else { $("nAvg").textContent = "–"; }
+  $("nStories").textContent = u.filter(function(r){ return r.event_type==="exhibit_view"; }).length;
+  $("nRooms").textContent = u.filter(function(r){ return r.event_type==="room_view"; }).length;
+  $("nWaiting").textContent = subs.filter(function(r){ return r.status==="new"; }).length;
+  function topList(el, counts, emptyText){
+    var pairs = Object.keys(counts).map(function(k){ return [k, counts[k]]; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0,10);
+    if(!pairs.length){ el.innerHTML = '<p class="hint">'+esc(emptyText)+'</p>'; return; }
+    el.innerHTML = pairs.map(function(p){ return '<div class="listitem flexrow spread"><span class="t">'+esc(p[0])+'</span><span class="chip pub">'+p[1]+' opens</span></div>'; }).join("");
+  }
+  var storyCounts = {}, roomCounts = {};
+  u.forEach(function(r){
+    if(r.event_type==="exhibit_view" && r.item) storyCounts[r.item]=(storyCounts[r.item]||0)+1;
+    if(r.event_type==="room_view" && r.section) roomCounts[r.section]=(roomCounts[r.section]||0)+1;
+  });
+  topList($("topStories"), storyCounts, "No stories opened in this stretch yet.");
+  topList($("topRooms"), roomCounts, "No rooms entered in this stretch yet.");
+  var chapters = {};
+  usage.forEach(function(r){ if(r.chapter) chapters[r.chapter]=1; });
+  checkins.forEach(function(r){ if(r.chapter) chapters[r.chapter]=1; });
+  walkers.forEach(function(r){ if(r.chapter) chapters[r.chapter]=1; });
+  var chNames = Object.keys(chapters).sort();
+  $("chapterList").innerHTML = chNames.length ? chNames.map(function(c){ return '<span class="chip draft" style="margin:0 .35rem .35rem 0;font-size:.9rem;padding:.35rem .8rem">'+esc(c)+'</span>'; }).join("") : '<p class="hint">No chapters yet.</p>';
+  $("cPassports").textContent = walkers.length;
+  $("cGuestbook").textContent = guestbook.length;
+  $("cCheckins").textContent = checkins.length;
+  $("cQuizPlays").textContent = quizRows.length;
+  $("homeLoading").classList.add("hidden"); $("homeBody").classList.remove("hidden");
+}
+
+/* ---------------- (b) Stories & Rooms ---------------- */
+function exhibits(){ return allContent.filter(function(r){ return r.value && r.value.type==="exhibit"; }); }
+function areas(){ return allContent.filter(function(r){ return r.value && r.value.type==="area"; }).sort(function(a,b){ return ((a.value&&a.value.order)||0)-((b.value&&b.value.order)||0); }); }
+function storyTitle(r){
+  var d = (r.value && r.value.data) || {};
+  return d.headline || d.title || d.name || r.key;
+}
+function storyRoomLabel(r){
+  var v = r.value || {};
+  if(v.kind==="piece" && v.areas && v.areas.length) return v.areas.map(areaName).join(", ");
+  if(v.area) return areaName(v.area);
+  return "";
+}
+function statusChip(status){ return '<span class="chip '+(status==="published"?"pub":"draft")+'">'+esc(status||"draft")+'</span>'; }
+
+function renderStoriesScreen(){
+  renderRooms(); renderStoryList(); fillAreaSelect();
+}
+function renderRooms(){
+  var list = areas();
+  if(!list.length){ $("roomsList").innerHTML = '<p class="hint">No rooms yet. Add the first one below.</p>'; return; }
+  $("roomsList").innerHTML = list.map(function(a){
+    var members = (a.value && a.value.members) || [];
+    return '<div class="listitem flexrow spread"><div><span class="t">'+esc(a.value.name||a.key)+'</span> <span class="hint">'+members.length+' stories</span> '+statusChip(a.status)+'</div>'+
+      '<button class="btn plain small" type="button" data-roomtoggle="'+esc(a.key)+'">'+(a.status==="published"?"Move to draft":"Publish room")+'</button></div>';
+  }).join("");
+}
+$("roomsList").addEventListener("click", async function(ev){
+  var b = ev.target.closest("[data-roomtoggle]"); if(!b) return;
+  var item = contentByKey(b.getAttribute("data-roomtoggle")); if(!item) return;
+  var next = item.status==="published" ? "draft" : "published";
+  b.disabled = true;
+  var res = await sb.from("museum_content").update({ status: next }).eq("key", item.key);
+  b.disabled = false;
+  if(res.error){ appMsg(errText(res.error), "err"); return; }
+  item.status = next;
+  await logActivity(next==="published" ? "Published room" : "Moved room to draft", item.value.name || item.key);
+  renderRooms(); fillAreaSelect();
+  appMsg("Saved. " + (item.value.name||"The room") + " is now " + next + ".", "ok");
+});
+$("addRoomBtn").addEventListener("click", async function(){
+  var name = $("newRoomName").value.trim();
+  if(!name){ appMsg("Give the new room a name first.", "err"); return; }
+  var slug = slugify(name);
+  var itemKey = "area:" + slug;
+  if(contentByKey(itemKey)){ appMsg("A room with that name is already saved.", "err"); return; }
+  var value = { type:"area", id: slug, name: name, order: areas().length + 1, members: [] };
+  var res = await sb.from("museum_content").insert({ key: itemKey, value: value, status: "draft" });
+  if(res.error){ appMsg(errText(res.error), "err"); return; }
+  allContent.push({ key: itemKey, value: value, status: "draft" });
+  $("newRoomName").value = "";
+  await logActivity("Added a room", name);
+  renderStoriesScreen();
+  appMsg("Saved. The new room is a draft — add stories, then publish it.", "ok");
+});
+function renderStoryList(){
+  var q = $("storySearch").value.trim().toLowerCase();
+  var list = exhibits().filter(function(r){ return !q || storyTitle(r).toLowerCase().indexOf(q) >= 0; });
+  if(!list.length){ $("storyList").innerHTML = '<p class="hint">No stories match. Try a different search, or add a story.</p>'; return; }
+  $("storyList").innerHTML = list.map(function(r){
+    return '<div class="listitem flexrow spread"><div><span class="t">'+esc(storyTitle(r))+'</span><br><span class="hint">'+esc(storyRoomLabel(r))+'</span></div><div class="flexrow">'+statusChip(r.status)+'<button class="btn small" type="button" data-edit="'+esc(r.key)+'">Open</button></div></div>';
+  }).join("");
+}
+$("storySearch").addEventListener("input", renderStoryList);
+$("storyList").addEventListener("click", function(ev){
+  var b = ev.target.closest("[data-edit]"); if(!b) return;
+  openEditor(b.getAttribute("data-edit"));
+});
+function fillAreaSelect(){
+  var sel = $("f_area");
+  var cur = sel.value;
+  sel.innerHTML = areas().map(function(a){ return '<option value="'+esc(a.value.id||a.key.replace("area:",""))+'">'+esc(a.value.name||a.key)+'</option>'; }).join("");
+  if(cur) sel.value = cur;
+}
+function setVal(id, v){ $(id).value = (v===null||v===undefined) ? "" : v; }
+function getVal(id){ return $(id).value.trim(); }
+
+var pieceImgsState = [];
+function renderPieceImgs(){
+  var box = $("pieceImgs");
+  if(!pieceImgsState.length){ box.innerHTML = '<p class="hint">No photos yet for this piece.</p>'; return; }
+  box.innerHTML = pieceImgsState.map(function(im, i){
+    return '<div class="listitem"><div class="flexrow"><img class="thumb" src="'+esc(im.src)+'" alt="">'+
+      '<div style="flex:1;min-width:200px"><label>Caption for photo '+(i+1)+'</label><input type="text" data-imgcap="'+i+'" value="'+esc(im.cap||"")+'">'+
+      '<div class="mt"><button class="btn red small" type="button" data-imgdel="'+i+'">Take this photo off</button></div></div></div></div>';
+  }).join("");
+}
+$("pieceImgs").addEventListener("input", function(ev){
+  var inp = ev.target.closest("[data-imgcap]"); if(!inp) return;
+  pieceImgsState[parseInt(inp.getAttribute("data-imgcap"),10)].cap = inp.value;
+});
+$("pieceImgs").addEventListener("click", function(ev){
+  var b = ev.target.closest("[data-imgdel]"); if(!b) return;
+  pieceImgsState.splice(parseInt(b.getAttribute("data-imgdel"),10),1);
+  renderPieceImgs();
+});
+function renderMainPhoto(){
+  var url = $("f_file").value.trim();
+  $("mainPhotoPreview").innerHTML = url ? '<img class="preview" src="'+esc(url)+'" alt="">' : '<p class="hint">No photo yet.</p>';
+  var url2 = $("f_file2").value.trim();
+  $("secondPhotoPreview").innerHTML = url2 ? '<img class="preview" src="'+esc(url2)+'" alt="">' : '<p class="hint">No second photo.</p>';
+}
+function renderNarration(){
+  var n = $("f_narration").value;
+  $("narrationBox").innerHTML = n ? '<audio controls src="'+esc(n)+'"></audio><p class="hint">That is the recording visitors hear.</p>' : '<p class="hint">No recording yet.</p>';
+}
+$("f_file").addEventListener("input", renderMainPhoto);
+$("f_file2").addEventListener("input", renderMainPhoto);
+$("mainPhotoUpload").addEventListener("change", async function(){
+  var f = this.files && this.files[0]; if(!f) return;
+  try{ $("f_file").value = await uploadToUploads(f); renderMainPhoto(); appMsg("Photo saved and linked to this story.", "ok"); }
+  catch(e){ appMsg(errText(e), "err"); }
+  this.value = "";
+});
+$("secondPhotoUpload").addEventListener("change", async function(){
+  var f = this.files && this.files[0]; if(!f) return;
+  try{ $("f_file2").value = await uploadToUploads(f); renderMainPhoto(); appMsg("Second photo saved and linked.", "ok"); }
+  catch(e){ appMsg(errText(e), "err"); }
+  this.value = "";
+});
+$("pieceImgUpload").addEventListener("change", async function(){
+  var f = this.files && this.files[0]; if(!f) return;
+  try{ var url = await uploadToUploads(f); pieceImgsState.push({ src: url, cap: "" }); renderPieceImgs(); appMsg("Photo added to this piece.", "ok"); }
+  catch(e){ appMsg(errText(e), "err"); }
+  this.value = "";
+});
+$("narrationUpload").addEventListener("change", async function(){
+  var f = this.files && this.files[0]; if(!f) return;
+  try{ $("f_narration").value = await uploadToUploads(f); renderNarration(); appMsg("Recording saved and linked to this story.", "ok"); }
+  catch(e){ appMsg(errText(e), "err"); }
+  this.value = "";
+});
+$("narrationRemove").addEventListener("click", function(){ $("f_narration").value = ""; renderNarration(); });
+
+$("f_kind").addEventListener("change", function(){
+  $("pieceAreasWrap").classList.toggle("hidden", this.value!=="piece");
+});
+function openEditor(itemKey){
+  var item = itemKey ? contentByKey(itemKey) : null;
+  var v = item ? (item.value||{}) : { type:"exhibit", kind:"hall", area:"", data:{} };
+  var d = v.data || {};
+  $("editorTitle").textContent = item ? "Edit story" : "Add a story";
+  setVal("f_key", item ? item.key : "");
+  $("f_kind").value = v.kind || (v.area==="syntaktes" ? "syntaktes" : "hall");
+  $("f_kind").dispatchEvent(new Event("change"));
+  fillAreaSelect();
+  if(v.area) $("f_area").value = v.area;
+  setVal("f_areas", (v.areas||[]).join(", "));
+  setVal("f_headline", d.headline || d.title || d.name || "");
+  setVal("f_year", d.year); setVal("f_date", d.date); setVal("f_page", d.page);
+  setVal("f_paper", d.paper); setVal("f_city", d.city); setVal("f_deck", d.deck);
+  setVal("f_pillars", d.pillars); setVal("f_meta", d.meta); setVal("f_excerptLabel", d.excerptLabel);
+  setVal("f_line", d.line); setVal("f_role", d.role); setVal("f_years", d.years);
+  setVal("f_quiz", d.quiz); setVal("f_cap", d.cap); setVal("f_alt", d.alt);
+  setVal("f_thread", d.thread); setVal("f_threadLabel", d.threadLabel); setVal("f_source", d.source);
+  setVal("f_metaHTML", d.metaHTML);
+  setVal("f_file", d.file || d.img || d.portrait || (d.imgs && d.imgs[0] ? d.imgs[0].src : ""));
+  setVal("f_file2", d.img2 || ""); setVal("f_alt2", d.alt2 || ""); setVal("f_cap2", d.cap2 || "");
+  setVal("f_excerpt", d.excerpt); setVal("f_scene", d.scene); setVal("f_lands", d.lands);
+  setVal("f_body", (d.body||[]).join("\n\n")); setVal("f_note", d.note);
+  setVal("f_narration", v.narration || "");
+  pieceImgsState = (d.imgs||[]).map(function(im){ return { src: im.src, cap: im.cap||"" }; });
+  renderPieceImgs(); renderMainPhoto(); renderNarration();
+  $("storyPreview").innerHTML = "";
+  $("editorCard").classList.remove("hidden");
+  $("editorCard").scrollIntoView({ behavior:"smooth" });
+}
+$("addStoryBtn").addEventListener("click", function(){ openEditor(null); });
+
+function collectStory(status){
+  var itemKey = getVal("f_key");
+  var existing = itemKey ? contentByKey(itemKey) : null;
+  var v = existing ? JSON.parse(JSON.stringify(existing.value||{})) : { type:"exhibit" };
+  var d = v.data || {};
+  var kind = $("f_kind").value;
+  var area = $("f_area").value;
+  var headline = getVal("f_headline");
+  var mainPhoto = getVal("f_file");
+  if(kind==="hall"){
+    d.year = getVal("f_year"); d.pillars = getVal("f_pillars"); d.file = mainPhoto;
+    d.paper = getVal("f_paper"); d.city = getVal("f_city"); d.date = getVal("f_date"); d.page = getVal("f_page");
+    d.headline = headline; d.deck = getVal("f_deck"); d.quiz = getVal("f_quiz"); d.cap = getVal("f_cap");
+    d.excerpt = getVal("f_excerpt"); d.scene = getVal("f_scene"); d.lands = getVal("f_lands");
+    d.thread = getVal("f_thread"); d.source = getVal("f_source");
+    v.area = area;
+  } else if(kind==="piece"){
+    d.year = getVal("f_year"); d.title = headline; d.meta = getVal("f_meta"); d.line = getVal("f_line");
+    d.imgs = pieceImgsState.slice();
+    d.portrait = mainPhoto || (pieceImgsState[0] ? pieceImgsState[0].src : "");
+    d.excerptLabel = getVal("f_excerptLabel"); d.excerpt = getVal("f_excerpt");
+    var bodyText = getVal("f_body");
+    d.body = bodyText ? bodyText.split(/\n\s*\n/).map(function(s){ return s.trim(); }).filter(Boolean) : [];
+    d.note = getVal("f_note");
+    v.areas = getVal("f_areas") ? getVal("f_areas").split(",").map(function(s){ return s.trim(); }).filter(Boolean) : [area];
+    if(!v.areas.length) v.areas = [area];
+    v.area = area;
+  } else if(kind==="syntaktes"){
+    d.name = headline; d.role = getVal("f_role"); d.years = getVal("f_years");
+    d.scene = getVal("f_scene"); d.alt = getVal("f_alt"); d.img = mainPhoto;
+    v.area = "syntaktes";
+  } else if(kind==="aurora"){
+    d.year = getVal("f_year"); d.file = mainPhoto; d.alt = getVal("f_alt");
+    d.paper = getVal("f_paper"); d.city = getVal("f_city"); d.date = getVal("f_date"); d.page = getVal("f_page");
+    d.metaHTML = getVal("f_metaHTML"); d.headline = headline; d.deck = getVal("f_deck");
+    d.excerpt = getVal("f_excerpt"); d.excerptLabel = getVal("f_excerptLabel"); d.scene = getVal("f_scene");
+    d.thread = getVal("f_thread"); d.threadLabel = getVal("f_threadLabel"); d.source = getVal("f_source"); d.line = getVal("f_line");
+    var f2 = getVal("f_file2");
+    if(f2){ d.img2 = f2; d.alt2 = getVal("f_alt2"); d.cap2 = getVal("f_cap2"); }
+    v.area = "aurora";
+  }
+  v.type = "exhibit"; v.kind = kind; v.data = d;
+  v.narration = getVal("f_narration") || null;
+  if(!existing && (v.order===undefined)) v.order = exhibits().length + 1;
+  return { itemKey: itemKey, existing: existing, value: v, headline: headline, area: area, status: status };
+}
+async function saveStory(status){
+  var c = collectStory(status);
+  if(!c.headline){ appMsg("Give the story a headline or title first.", "err"); return; }
+  try{
+    if(c.existing){
+      var res = await sb.from("museum_content").update({ value: c.value, status: status, updated_at: new Date().toISOString() }).eq("key", c.itemKey);
+      if(res.error) throw res.error;
+      c.existing.value = c.value; c.existing.status = status;
+      await logActivity(status==="published" ? "Published story" : "Saved story as draft", c.headline);
+      appMsg(status==="published" ? "Published. The story is live in the museum." : "Saved as a draft.", "ok");
+    } else {
+      var newKey = "exhibit:" + c.area + "-" + slugify(c.headline);
+      if(contentByKey(newKey)){ appMsg("A story with that headline is already saved in this room. Change the headline a little.", "err"); return; }
+      var ins = await sb.from("museum_content").insert({ key: newKey, value: c.value, status: status });
+      if(ins.error) throw ins.error;
+      var saved = { key: newKey, value: c.value, status: status };
+      allContent.push(saved);
+      setVal("f_key", newKey);
+      var areaItem = contentByKey("area:" + c.area);
+      if(areaItem){
+        var av = JSON.parse(JSON.stringify(areaItem.value||{}));
+        av.members = av.members || [];
+        if(av.members.indexOf(newKey) < 0){ av.members.push(newKey); }
+        var up = await sb.from("museum_content").update({ value: av }).eq("key", areaItem.key);
+        if(!up.error) areaItem.value = av;
+      }
+      if(c.value.kind==="piece" && c.value.areas){
+        for(var i=0;i<c.value.areas.length;i++){
+          var extra = contentByKey("area:" + c.value.areas[i]);
+          if(extra && extra.key !== (areaItem && areaItem.key)){
+            var ev = JSON.parse(JSON.stringify(extra.value||{}));
+            ev.members = ev.members || [];
+            if(ev.members.indexOf(newKey) < 0){ ev.members.push(newKey); await sb.from("museum_content").update({ value: ev }).eq("key", extra.key); extra.value = ev; }
+          }
+        }
+      }
+      await logActivity(status==="published" ? "Published new story" : "Added story as draft", c.headline);
+      appMsg(status==="published" ? "Published. The new story is live in the museum." : "Saved as a draft.", "ok");
+    }
+    renderStoriesScreen();
+  }catch(e){ appMsg(errText(e), "err"); }
+}
+$("saveDraftBtn").addEventListener("click", function(){ saveStory("draft"); });
+$("publishBtn").addEventListener("click", function(){ saveStory("published"); });
+$("previewBtn").addEventListener("click", function(){
+  var c = collectStory("draft");
+  var d = c.value.data || {};
+  var photo = d.file || d.img || d.portrait || (d.imgs && d.imgs[0] ? d.imgs[0].src : "");
+  var words = d.excerpt || "";
+  var extra = "";
+  if(d.body && d.body.length) extra = d.body.map(function(p){ return "<p>"+esc(p)+"</p>"; }).join("");
+  var imgsHtml = "";
+  if(d.imgs && d.imgs.length){ imgsHtml = d.imgs.map(function(im){ return '<figure style="margin:1rem 0"><img class="preview" src="'+esc(im.src)+'" alt=""><figcaption class="hint">'+esc(im.cap||"")+'</figcaption></figure>'; }).join(""); }
+  $("storyPreview").innerHTML = '<div class="previewbox"><p class="hint">Preview — this is how a visitor reads it.</p>'+
+    (photo ? '<img class="preview" src="'+esc(photo)+'" alt="">' : "")+
+    '<div class="phead">'+esc(c.headline||"Untitled")+'</div>'+
+    (d.deck ? '<p><b>'+esc(d.deck)+'</b></p>' : "")+
+    (d.meta ? '<p class="kv">'+esc(d.meta)+'</p>' : "")+
+    (d.year || d.paper || d.city ? '<p class="kv">'+esc([d.year,d.paper,d.city,d.date,d.page].filter(Boolean).join(" · "))+'</p>' : "")+
+    (words ? '<p>'+esc(words).replace(/\n/g,"<br>")+'</p>' : "")+ extra + imgsHtml +
+    (d.scene ? '<p><b>Scene.</b> '+esc(d.scene)+'</p>' : "")+
+    (c.value.narration ? '<audio controls src="'+esc(c.value.narration)+'"></audio>' : "")+
+    '</div>';
+});
+$("deleteStoryBtn").addEventListener("click", async function(){
+  var itemKey = getVal("f_key");
+  if(!itemKey){ appMsg("This story has not been saved yet, so there is nothing to delete.", "err"); return; }
+  var item = contentByKey(itemKey);
+  var title = item ? storyTitle(item) : itemKey;
+  if(!window.confirm("Delete “" + title + "” for good? This cannot be undone from the panel. A backup can bring it back.")) return;
+  var res = await sb.from("museum_content").delete().eq("key", itemKey);
+  if(res.error){ appMsg(errText(res.error), "err"); return; }
+  allContent = allContent.filter(function(r){ return r.key !== itemKey; });
+  for(var i=0;i<allContent.length;i++){
+    var av = allContent[i].value;
+    if(av && av.type==="area" && av.members && av.members.indexOf(itemKey) >= 0){
+      var copy = JSON.parse(JSON.stringify(av));
+      copy.members = copy.members.filter(function(m){ return m !== itemKey; });
+      await sb.from("museum_content").update({ value: copy }).eq("key", allContent[i].key);
+      allContent[i].value = copy;
+    }
+  }
+  await logActivity("Deleted story", title);
+  $("editorCard").classList.add("hidden");
+  renderStoriesScreen();
+  appMsg("Deleted. “" + title + "” is gone.", "ok");
+});
+</script>
+
+<script>
+"use strict";
+/* ---------------- (c) Entrance ---------------- */
+function entranceItems(){ return allContent.filter(function(r){ return r.value && r.value.type==="entrance"; }); }
+function prettyEntranceName(k){
+  var s = k.replace("entrance:", "").replace(/-/g, " ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function renderEntrance(){
+  var welcome = contentByKey("entrance:welcome-copy");
+  var wd = welcome && welcome.value ? (welcome.value.data || welcome.value) : {};
+  setVal("w_title", wd.title); setVal("w_series", wd.seriesLine); setVal("w_lede", wd.lede);
+  setVal("w_directions", wd.directions); setVal("w_note", wd.viewingNote); setVal("w_credit", wd.credit);
+  var how = wd.howTo || [];
+  setVal("w_how1", how[0]); setVal("w_how2", how[1]); setVal("w_how3", how[2]); setVal("w_how4", how[3]);
+  var eb = wd.enterButton || {};
+  setVal("w_enterLabel", eb.label); setVal("w_enterDir", eb.direction);
+  var gb = contentByKey("entrance:guest-book");
+  var gbw = gb && gb.value ? (gb.value.welcomeButton || {}) : {};
+  setVal("gb_label", gbw.label); setVal("gb_dir", gbw.direction);
+  var ci = contentByKey("entrance:chapter-checkin");
+  var ciw = ci && ci.value ? (ci.value.welcomeButton || {}) : {};
+  setVal("ci_label", ciw.label); setVal("ci_dir", ciw.direction);
+  renderAnnouncements();
+  renderEntrancePieces();
+}
+$("welcomeSave").addEventListener("click", async function(){
+  var item = contentByKey("entrance:welcome-copy");
+  if(!item){ appMsg("The welcome words are not saved yet, so there is nothing to update here.", "err"); return; }
+  var v = JSON.parse(JSON.stringify(item.value||{}));
+  v.type = "entrance";
+  v.data = v.data || {};
+  v.data.title = getVal("w_title"); v.data.seriesLine = getVal("w_series"); v.data.lede = getVal("w_lede");
+  v.data.directions = getVal("w_directions");
+  v.data.howTo = [getVal("w_how1"), getVal("w_how2"), getVal("w_how3"), getVal("w_how4")];
+  v.data.viewingNote = getVal("w_note"); v.data.credit = getVal("w_credit");
+  v.data.enterButton = { label: getVal("w_enterLabel"), direction: getVal("w_enterDir") };
+  var res = await sb.from("museum_content").update({ value: v, updated_at: new Date().toISOString() }).eq("key", item.key);
+  if(res.error){ appMsg(errText(res.error), "err"); return; }
+  item.value = v;
+  await logActivity("Saved welcome words", v.data.title || "Entrance");
+  appMsg("Saved. The welcome words reach the museum right away.", "ok");
+});
+$("doorButtonsSave").addEventListener("click", async function(){
+  var pairs = [
+    ["entrance:guest-book", getVal("gb_label"), getVal("gb_dir"), "Guest book button words"],
+    ["entrance:chapter-checkin", getVal("ci_label"), getVal("ci_dir"), "Chapter check-in button words"]
+  ];
+  for(var i=0;i<pairs.length;i++){
+    var item = contentByKey(pairs[i][0]);
+    if(!item) continue;
+    var v = JSON.parse(JSON.stringify(item.value||{}));
+    v.welcomeButton = { label: pairs[i][1], direction: pairs[i][2] };
+    var res = await sb.from("museum_content").update({ value: v }).eq("key", item.key);
+    if(res.error){ appMsg(errText(res.error), "err"); return; }
+    item.value = v;
+    await logActivity("Saved button words", pairs[i][3]);
+  }
+  appMsg("Saved. The button words reach the museum right away.", "ok");
+});
+function entranceAnnouncements(){
+  return allContent.filter(function(r){ return r.value && r.value.type==="announcement" && r.value.kind==="entrance"; });
+}
+function renderAnnouncements(){
+  var list = entranceAnnouncements();
+  if(!list.length){ $("annList").innerHTML = '<p class="hint">No entrance messages yet. Write the first one below.</p>'; return; }
+  $("annList").innerHTML = list.map(function(a){
+    var v = a.value||{};
+    return '<div class="listitem"><div class="flexrow spread"><span class="t">'+esc(v.text||"(no words yet)")+'</span>'+statusChip(a.status)+'</div>'+
+      '<p class="kv">'+esc(v.from||"")+' to '+esc(v.to||"")+'</p>'+
+      '<div class="flexrow"><button class="btn small" type="button" data-annedit="'+esc(a.key)+'">Open</button>'+
+      '<button class="btn red small" type="button" data-anndel="'+esc(a.key)+'">Delete message</button></div></div>';
+  }).join("");
+}
+$("annList").addEventListener("click", async function(ev){
+  var e = ev.target.closest("[data-annedit]");
+  if(e){
+    var item = contentByKey(e.getAttribute("data-annedit")); if(!item) return;
+    setVal("ann_key", item.key); setVal("ann_text", item.value.text); setVal("ann_from", item.value.from); setVal("ann_to", item.value.to);
+    $("ann_text").scrollIntoView({ behavior:"smooth" });
+    return;
+  }
+  var del = ev.target.closest("[data-anndel]");
+  if(del){
+    var ditem = contentByKey(del.getAttribute("data-anndel")); if(!ditem) return;
+    if(!window.confirm("Delete this entrance message for good?")) return;
+    var res = await sb.from("museum_content").delete().eq("key", ditem.key);
+    if(res.error){ appMsg(errText(res.error), "err"); return; }
+    allContent = allContent.filter(function(r){ return r.key !== ditem.key; });
+    await logActivity("Deleted entrance message", ditem.value.text || ditem.key);
+    renderAnnouncements();
+    appMsg("Deleted. The message is gone.", "ok");
+  }
+});
+async function saveAnnouncement(status){
+  var text = getVal("ann_text");
+  if(!text){ appMsg("Write the message first.", "err"); return; }
+  var itemKey = getVal("ann_key");
+  var existing = itemKey ? contentByKey(itemKey) : null;
+  var v = existing ? JSON.parse(JSON.stringify(existing.value||{})) : { type:"announcement", kind:"entrance" };
+  v.type = "announcement"; v.kind = "entrance"; v.text = text; v.from = getVal("ann_from"); v.to = getVal("ann_to");
+  try{
+    if(existing){
+      var res = await sb.from("museum_content").update({ value: v, status: status, updated_at: new Date().toISOString() }).eq("key", itemKey);
+      if(res.error) throw res.error;
+      existing.value = v; existing.status = status;
+    } else {
+      var newKey = "announcement:entrance-" + slugify(text.split(" ").slice(0,4).join(" ")) + "-" + Date.now().toString(36);
+      var ins = await sb.from("museum_content").insert({ key: newKey, value: v, status: status });
+      if(ins.error) throw ins.error;
+      allContent.push({ key: newKey, value: v, status: status });
+      setVal("ann_key", newKey);
+    }
+    await logActivity(status==="published" ? "Published entrance message" : "Saved entrance message as draft", text);
+    renderAnnouncements();
+    appMsg(status==="published" ? "Published. The message shows at the entrance between its dates." : "Saved as a draft.", "ok");
+  }catch(e){ appMsg(errText(e), "err"); }
+}
+$("annSaveDraft").addEventListener("click", function(){ saveAnnouncement("draft"); });
+$("annPublish").addEventListener("click", function(){ saveAnnouncement("published"); });
+$("annClear").addEventListener("click", function(){ setVal("ann_key",""); setVal("ann_text",""); setVal("ann_from",""); setVal("ann_to",""); });
+function renderEntrancePieces(){
+  var list = entranceItems().slice().sort(function(a,b){
+    var oa = (a.value && a.value.order!==undefined) ? a.value.order : 999;
+    var ob = (b.value && b.value.order!==undefined) ? b.value.order : 999;
+    return oa-ob;
+  });
+  if(!list.length){ $("entrancePieces").innerHTML = '<p class="hint">No entrance pieces saved yet.</p>'; return; }
+  $("entrancePieces").innerHTML = list.map(function(item, i){
+    var visible = !(item.value && item.value.visible===false);
+    return '<div class="listitem flexrow spread"><div><span class="t">'+(i+1)+'. '+esc(prettyEntranceName(item.key))+'</span><br><span class="hint">'+(visible?"Showing at the door":"Hidden at the door")+'</span></div>'+
+      '<div class="flexrow"><label class="switch" aria-label="Show or hide"><input type="checkbox" data-entvis="'+esc(item.key)+'" '+(visible?"checked":"")+'><span class="track"></span></label>'+
+      '<button class="btn plain small" type="button" data-entup="'+i+'">Move up</button>'+
+      '<button class="btn plain small" type="button" data-entdown="'+i+'">Move down</button></div></div>';
+  }).join("");
+  $("entrancePieces")._ordered = list;
+}
+async function saveEntranceOrder(list){
+  for(var i=0;i<list.length;i++){
+    var v = JSON.parse(JSON.stringify(list[i].value||{}));
+    v.order = i+1;
+    var res = await sb.from("museum_content").update({ value: v }).eq("key", list[i].key);
+    if(res.error) throw res.error;
+    list[i].value = v;
+  }
+}
+$("entrancePieces").addEventListener("change", async function(ev){
+  var sw = ev.target.closest("[data-entvis]"); if(!sw) return;
+  var item = contentByKey(sw.getAttribute("data-entvis")); if(!item) return;
+  var v = JSON.parse(JSON.stringify(item.value||{}));
+  v.visible = sw.checked;
+  var res = await sb.from("museum_content").update({ value: v }).eq("key", item.key);
+  if(res.error){ appMsg(errText(res.error), "err"); sw.checked = !sw.checked; return; }
+  item.value = v;
+  await logActivity(sw.checked ? "Showed an entrance piece" : "Hid an entrance piece", prettyEntranceName(item.key));
+  renderEntrancePieces();
+  appMsg("Saved. " + prettyEntranceName(item.key) + (sw.checked ? " is showing." : " is hidden."), "ok");
+});
+$("entrancePieces").addEventListener("click", async function(ev){
+  var up = ev.target.closest("[data-entup]"), down = ev.target.closest("[data-entdown]");
+  if(!up && !down) return;
+  var list = ($("entrancePieces")._ordered || []).slice();
+  var idx = parseInt((up||down).getAttribute(up ? "data-entup" : "data-entdown"), 10);
+  var swap = up ? idx-1 : idx+1;
+  if(swap < 0 || swap >= list.length) return;
+  var tmp = list[idx]; list[idx] = list[swap]; list[swap] = tmp;
+  try{ await saveEntranceOrder(list); await logActivity("Changed entrance order", prettyEntranceName(tmp.key)); renderEntrancePieces(); appMsg("Saved. The new order is in place.", "ok"); }
+  catch(e){ appMsg(errText(e), "err"); }
+});
+
+/* ---------------- (d) Submissions ---------------- */
+var submissionsCache = [];
+$("subSeg").addEventListener("click", function(ev){
+  var b = ev.target.closest("button"); if(!b) return;
+  subFilter = b.getAttribute("data-f");
+  var btns = document.querySelectorAll("#subSeg button");
+  for(var i=0;i<btns.length;i++) btns[i].classList.toggle("active", btns[i]===b);
+  renderSubmissions();
+});
+async function loadSubmissions(){
+  $("subList").innerHTML = '<p class="hint">Loading what visitors sent…</p>';
+  try{
+    var res = await sb.from("museum_submissions").select("*").order("created_at", { ascending: false });
+    if(res.error) throw res.error;
+    submissionsCache = res.data || [];
+  }catch(e){ $("subList").innerHTML = '<p class="hint">What visitors sent could not be loaded. '+esc(errText(e))+'</p>'; return; }
+  renderSubmissions();
+}
+async function signedLink(path){
+  if(!path) return "";
+  try{
+    var res = await sb.storage.from("museum-submissions").createSignedUrl(path, 3600);
+    if(res.error) return "";
+    return (res.data && res.data.signedUrl) || "";
+  }catch(e){ return ""; }
+}
+async function renderSubmissions(){
+  var newCount = submissionsCache.filter(function(s){ return s.status==="new"; }).length;
+  $("subNewCount").textContent = newCount;
+  var list = submissionsCache.filter(function(s){ return subFilter==="all" || s.status===subFilter; });
+  if(!list.length){ $("subList").innerHTML = '<div class="card"><p class="hint">Nothing here under this filter.</p></div>'; return; }
+  var html = "";
+  for(var i=0;i<list.length;i++){
+    var s = list[i];
+    var url = await signedLink(s.file_path);
+    var fileHtml = "";
+    if(url && looksAudio(s.file_path || s.kind)){ fileHtml = '<audio controls src="'+esc(url)+'"></audio>'; }
+    else if(url && (looksImage(s.file_path) || s.kind==="A photo" || s.kind==="An Omega Rho photo")){ fileHtml = '<a href="'+esc(url)+'" target="_blank" rel="noopener"><img class="preview" style="max-width:340px" src="'+esc(url)+'" alt="What was sent in"></a>'; }
+    else if(url){ fileHtml = '<a class="btn plain small" href="'+esc(url)+'" target="_blank" rel="noopener">Open what was sent</a>'; }
+    else if(s.file_path){ fileHtml = '<p class="hint">The file could not be opened just now.</p>'; }
+    var chipCls = s.status==="new" ? "new" : (s.status==="on hold" ? "hold" : (s.status==="approved" ? "pub" : "draft"));
+    html += '<div class="card white"><div class="flexrow spread"><span class="t" style="font-weight:700;color:var(--blue)">'+esc(s.name||"No name given")+'</span><span class="chip '+chipCls+'">'+esc(s.status||"new")+'</span></div>'+
+      '<p class="kv"><b>Chapter:</b> '+esc(s.chapter||"—")+' &nbsp; <b>Kind:</b> '+esc(s.kind||"")+' &nbsp; <b>Sent:</b> '+esc(fmtDate(s.created_at))+'</p>'+
+      (s.description ? '<p>'+esc(s.description)+'</p>' : "")+ fileHtml +
+      '<div class="flexrow mt"><button class="btn gold small" type="button" data-subact="approved" data-subid="'+esc(s.id)+'">Approve</button>'+
+      '<button class="btn plain small" type="button" data-subact="on hold" data-subid="'+esc(s.id)+'">Put on hold</button>'+
+      '<button class="btn red small" type="button" data-subact="rejected" data-subid="'+esc(s.id)+'">Reject</button></div></div>';
+  }
+  $("subList").innerHTML = html;
+}
+$("subList").addEventListener("click", async function(ev){
+  var b = ev.target.closest("[data-subact]"); if(!b) return;
+  var id = b.getAttribute("data-subid"), status = b.getAttribute("data-subact");
+  var item = submissionsCache.filter(function(s){ return String(s.id)===String(id); })[0];
+  b.disabled = true;
+  var res = await sb.from("museum_submissions").update({ status: status }).eq("id", id);
+  b.disabled = false;
+  if(res.error){ appMsg(errText(res.error), "err"); return; }
+  if(item) item.status = status;
+  await logActivity("Submission " + status, item ? ((item.name||"") + " — " + (item.kind||"")) : String(id));
+  renderSubmissions();
+  appMsg("Saved. That piece is now marked " + status + ".", "ok");
+});
+
+/* ---------------- (e) Files ---------------- */
+var filesCache = [];
+async function loadFiles(){
+  $("fileList").innerHTML = '<p class="hint">Loading files…</p>';
+  try{
+    var res = await sb.storage.from("museum-uploads").list("", { limit: 1000, sortBy: { column: "created_at", order: "desc" } });
+    if(res.error) throw res.error;
+    filesCache = (res.data||[]).filter(function(f){ return f.name && f.name !== ".emptyFolderPlaceholder"; });
+  }catch(e){ $("fileList").innerHTML = '<p class="hint">Files could not be loaded. '+esc(errText(e))+'</p>'; return; }
+  if(!filesCache.length){ $("fileList").innerHTML = '<div class="card"><p class="hint">No files saved yet. Upload the first one above.</p></div>'; return; }
+  $("fileList").innerHTML = filesCache.map(function(f){
+    var size = f.metadata && f.metadata.size!==undefined ? f.metadata.size : f.size;
+    return '<div class="listitem flexrow spread"><div><span class="t">'+esc(f.name)+'</span><br><span class="hint">'+esc(fmtSize(size))+' · '+esc(fmtDay(f.created_at || f.updated_at))+'</span></div>'+
+      '<div class="flexrow"><button class="btn plain small" type="button" data-copyfile="'+esc(f.name)+'">Copy link</button>'+
+      '<button class="btn red small" type="button" data-delfile="'+esc(f.name)+'">Delete</button></div></div>';
+  }).join("");
+}
+$("fileUploadBtn").addEventListener("click", async function(){
+  var files = $("fileUpload").files;
+  if(!files || !files.length){ appMsg("Pick at least one file first.", "err"); return; }
+  var doneNames = [];
+  try{
+    for(var i=0;i<files.length;i++){ await uploadToUploads(files[i]); doneNames.push(files[i].name); }
+  }catch(e){ appMsg(errText(e), "err"); return; }
+  $("fileUpload").value = "";
+  await logActivity("Uploaded files", doneNames.join(", "));
+  loadFiles();
+  appMsg("Saved. " + doneNames.length + (doneNames.length===1 ? " file is" : " files are") + " in the museum's files.", "ok");
+});
+$("fileList").addEventListener("click", async function(ev){
+  var cp = ev.target.closest("[data-copyfile]");
+  if(cp){
+    var pub = sb.storage.from("museum-uploads").getPublicUrl(cp.getAttribute("data-copyfile"));
+    var url = pub && pub.data ? pub.data.publicUrl : "";
+    try{ await navigator.clipboard.writeText(url); appMsg("Link copied: " + url, "ok"); }
+    catch(e){ appMsg("Here is the link: " + url, "info"); }
+    return;
+  }
+  var del = ev.target.closest("[data-delfile]");
+  if(del){
+    var name = del.getAttribute("data-delfile");
+    if(!window.confirm("Delete “" + name + "” for good? Stories using this file will lose their picture or recording.")) return;
+    var res = await sb.storage.from("museum-uploads").remove([name]);
+    if(res.error){ appMsg(errText(res.error), "err"); return; }
+    await logActivity("Deleted a file", name);
+    loadFiles();
+    appMsg("Deleted. The file is gone.", "ok");
+  }
+});
+</script>
+
+<script>
+"use strict";
+/* ---------------- (f) Quizzes ---------------- */
+var QUIZ_AREAS = [
+  { id:"hall", label:"Founders Day Celebration" },
+  { id:"region", label:"Sigma Sigma" },
+  { id:"lessie", label:"The Lessie Crosland Room" },
+  { id:"syntaktes", label:"Syntaktes Hall" }
+];
+async function loadQuizzes(){
+  await loadContent(null);
+  renderQuizEditors();
+  renderChapterBoard();
+}
+function renderQuizEditors(){
+  var html = "";
+  QUIZ_AREAS.forEach(function(a){
+    var item = contentByKey("quiz:room-" + a.id);
+    var d = item && item.value ? (item.value.data || {}) : {};
+    var choices = d.choices || ["","",""];
+    var correctIdx = choices.indexOf(d.answer||"");
+    if(correctIdx < 0) correctIdx = 0;
+    html += '<div class="card" data-quizblock="'+a.id+'"><h3>'+esc(a.label)+' — room question</h3>'+
+      (item ? "" : '<p class="hint">No question saved for this room yet. Fill this in and save to create it.</p>')+
+      '<label>Question</label><input type="text" data-q="q" value="'+esc(d.q||"")+'">'+
+      '<label>Choice 1</label><input type="text" data-q="c0" value="'+esc(choices[0]||"")+'">'+
+      '<label>Choice 2</label><input type="text" data-q="c1" value="'+esc(choices[1]||"")+'">'+
+      '<label>Choice 3</label><input type="text" data-q="c2" value="'+esc(choices[2]||"")+'">'+
+      '<label>Which choice is right?</label><select data-q="correct">'+
+        [0,1,2].map(function(i){ return '<option value="'+i+'"'+(i===correctIdx?" selected":"")+'>Choice '+(i+1)+'</option>'; }).join("")+
+      '</select>'+
+      '<label>Words for a right pick</label><input type="text" data-q="right" value="'+esc(d.right||"")+'">'+
+      '<label>Words for a wrong pick</label><input type="text" data-q="wrong" value="'+esc(d.wrong||"")+'">'+
+      '<div class="flexrow mt"><button class="btn gold" type="button" data-qsave="'+a.id+'">Save question</button>'+
+      '<button class="btn plain" type="button" data-qpreview="'+a.id+'">Preview</button></div>'+
+      '<div class="mt" data-qprevbox></div></div>';
+  });
+  $("quizEditors").innerHTML = html;
+}
+function readQuizBlock(areaId){
+  var block = document.querySelector('[data-quizblock="'+areaId+'"]');
+  function val(name){ var el = block.querySelector('[data-q="'+name+'"]'); return el ? el.value.trim() : ""; }
+  var choices = [val("c0"), val("c1"), val("c2")];
+  var correctIdx = parseInt(val("correct") || "0", 10);
+  return { q: val("q"), choices: choices, answer: choices[correctIdx] || "", right: val("right"), wrong: val("wrong") };
+}
+$("quizEditors").addEventListener("click", async function(ev){
+  var pv = ev.target.closest("[data-qpreview]");
+  if(pv){
+    var areaId = pv.getAttribute("data-qpreview");
+    var data = readQuizBlock(areaId);
+    var block = document.querySelector('[data-quizblock="'+areaId+'"]');
+    var box = block.querySelector("[data-qprevbox]");
+    box.innerHTML = '<div class="previewbox"><p class="hint">Preview — the right answer is marked.</p><p><b>'+esc(data.q||"")+'</b></p>'+
+      data.choices.map(function(c){ return '<p>'+(c===data.answer ? "✓ " : "· ")+esc(c)+(c===data.answer ? ' <span class="chip pub">right answer</span>' : "")+'</p>'; }).join("")+
+      '<p class="kv"><b>Right pick:</b> '+esc(data.right)+'<br><b>Wrong pick:</b> '+esc(data.wrong)+'</p></div>';
+    return;
+  }
+  var sv = ev.target.closest("[data-qsave]");
+  if(sv){
+    var aid = sv.getAttribute("data-qsave");
+    var d = readQuizBlock(aid);
+    if(!d.q || d.choices.some(function(c){ return !c; })){ appMsg("Fill in the question and all three choices first.", "err"); return; }
+    var itemKey = "quiz:room-" + aid;
+    var existing = contentByKey(itemKey);
+    var v = existing ? JSON.parse(JSON.stringify(existing.value||{})) : { type:"quiz", kind:"room-question", area: aid };
+    v.type = "quiz"; v.kind = "room-question"; v.area = aid; v.data = d;
+    try{
+      if(existing){
+        var res = await sb.from("museum_content").update({ value: v, updated_at: new Date().toISOString() }).eq("key", itemKey);
+        if(res.error) throw res.error;
+        existing.value = v;
+      } else {
+        var ins = await sb.from("museum_content").insert({ key: itemKey, value: v, status: "published" });
+        if(ins.error) throw ins.error;
+        allContent.push({ key: itemKey, value: v, status: "published" });
+      }
+      await logActivity("Saved a room question", areaName(aid) || aid);
+      appMsg("Saved. The room question is updated.", "ok");
+    }catch(e){ appMsg(errText(e), "err"); }
+  }
+});
+async function renderChapterBoard(){
+  var quizRows = await safeSelect("chapter_quiz");
+  if(!quizRows.length){ $("chapterBoard").innerHTML = '<p class="hint">No chapter has played yet.</p>'; return; }
+  var byChapter = {};
+  quizRows.forEach(function(r){
+    var c = r.chapter || "—";
+    byChapter[c] = byChapter[c] || { plays: 0, best: -1, bestText: "" };
+    byChapter[c].plays++;
+    var score = (r.score===null||r.score===undefined) ? -1 : Number(r.score);
+    if(score > byChapter[c].best){ byChapter[c].best = score; byChapter[c].bestText = r.score + (r.total!==undefined && r.total!==null ? " of " + r.total : ""); }
+  });
+  var names = Object.keys(byChapter).sort(function(a,b){ return byChapter[b].best - byChapter[a].best; });
+  $("chapterBoard").innerHTML = names.map(function(c){
+    return '<div class="listitem flexrow spread"><span class="t">'+esc(c)+'</span><span class="hint">Best score: <b>'+esc(byChapter[c].bestText||"—")+'</b> · '+byChapter[c].plays+' plays</span></div>';
+  }).join("");
+}
+
+/* ---------------- (g) Members ---------------- */
+var membersCache = [];
+async function loadMembers(){
+  $("memberList").innerHTML = '<p class="hint">Loading members…</p>';
+  membersCache = await safeSelect("passport_walkers");
+  renderMembers();
+}
+function memberLabel(m){
+  var preferred = ["email","name","chapter","joined","member_type","memberType","type","created_at"];
+  var keys = Object.keys(m||{});
+  var ordered = preferred.filter(function(k){ return keys.indexOf(k) >= 0; });
+  keys.forEach(function(k){ if(ordered.indexOf(k) < 0 && k!=="deactivated" && k!=="id") ordered.push(k); });
+  return ordered;
+}
+function renderMembers(){
+  var q = $("memberSearch").value.trim().toLowerCase();
+  var list = membersCache.filter(function(m){
+    if(!q) return true;
+    return ["email","name","chapter"].some(function(k){ return m[k] && String(m[k]).toLowerCase().indexOf(q) >= 0; });
+  });
+  if(!list.length){ $("memberList").innerHTML = '<div class="card"><p class="hint">No members match.</p></div>'; return; }
+  $("memberList").innerHTML = list.map(function(m, idx){
+    var fields = memberLabel(m).map(function(k){
+      var label = k.replace(/_/g," ");
+      return '<span class="kv"><b>'+esc(label)+':</b> '+esc(m[k]===null||m[k]===undefined ? "—" : (k==="created_at"||k==="joined" ? fmtDay(m[k]) : m[k]))+'</span>';
+    }).join(" &nbsp;·&nbsp; ");
+    var off = m.deactivated === true;
+    return '<div class="card white"><div class="flexrow spread"><span class="t" style="font-weight:700;color:var(--blue)">'+esc(m.name || m.email || "Member")+'</span>'+(off ? '<span class="chip new">Turned off</span>' : '<span class="chip pub">Active</span>')+'</div>'+
+      '<p>'+fields+'</p>'+
+      '<div class="flexrow"><button class="btn small" type="button" data-mlink="'+idx+'">Email a sign-in link</button>'+
+      '<button class="btn plain small" type="button" data-mreset="'+idx+'">Email a password reset</button>'+
+      '<button class="btn red small" type="button" data-mtoggle="'+idx+'">'+(off ? "Reactivate" : "Deactivate")+'</button></div></div>';
+  }).join("");
+  $("memberList")._shown = list;
+}
+$("memberSearch").addEventListener("input", renderMembers);
+$("memberList").addEventListener("click", async function(ev){
+  var shown = $("memberList")._shown || [];
+  var link = ev.target.closest("[data-mlink]"), reset = ev.target.closest("[data-mreset]"), tog = ev.target.closest("[data-mtoggle]");
+  var btn = link || reset || tog; if(!btn) return;
+  var idx = parseInt(btn.getAttribute("data-mlink") || btn.getAttribute("data-mreset") || btn.getAttribute("data-mtoggle"), 10);
+  var m = shown[idx]; if(!m || !m.email){ appMsg("That member has no email saved.", "err"); return; }
+  btn.disabled = true;
+  try{
+    if(link){
+      var r1 = await sb.auth.signInWithOtp({ email: m.email });
+      if(r1.error) throw r1.error;
+      await logActivity("Sent a sign-in link to a member", m.email);
+      appMsg("Sent. A sign-in link is on its way to " + m.email + ".", "ok");
+    } else if(reset){
+      var r2 = await sb.auth.resetPasswordForEmail(m.email);
+      if(r2.error) throw r2.error;
+      await logActivity("Sent a password reset to a member", m.email);
+      appMsg("Sent. A password reset is on its way to " + m.email + ".", "ok");
+    } else if(tog){
+      var next = !(m.deactivated === true);
+      var upd = sb.from("passport_walkers").update({ deactivated: next });
+      upd = (m.id !== undefined && m.id !== null) ? upd.eq("id", m.id) : upd.eq("email", m.email);
+      var r3 = await upd;
+      if(r3.error) throw r3.error;
+      m.deactivated = next;
+      await logActivity(next ? "Deactivated a member account" : "Reactivated a member account", m.email);
+      renderMembers();
+      appMsg(next ? "Saved. That account is turned off." : "Saved. That account is active again.", "ok");
+    }
+  }catch(e){ appMsg(errText(e), "err"); }
+  btn.disabled = false;
+});
+
+/* ---------------- (h) Admins ---------------- */
+var adminsCache = [];
+async function loadAdmins(){
+  try{
+    var res = await sb.from("admins").select("*").order("created_at", { ascending: true });
+    if(res.error) throw res.error;
+    adminsCache = res.data || [];
+  }catch(e){ $("adminList").innerHTML = '<p class="hint">The admins list could not be loaded. '+esc(errText(e))+'</p>'; return; }
+  if(adminsCache.length < 2){
+    showMsg($("adminWarn"), "Add a second admin so nobody is locked out if one person leaves.", "info");
+  } else { showMsg($("adminWarn"), "", "info"); }
+  if(!adminsCache.length){ $("adminList").innerHTML = '<div class="card"><p class="hint">Nobody is on the list yet.</p></div>'; return; }
+  $("adminList").innerHTML = adminsCache.map(function(a){
+    return '<div class="listitem flexrow spread"><div><span class="t">'+esc(a.name||"")+'</span><br><span class="hint">'+esc(a.email||"")+' · added '+esc(fmtDay(a.created_at))+'</span></div>'+
+      '<button class="btn red small" type="button" data-admdel="'+esc(a.email)+'">Remove</button></div>';
+  }).join("");
+}
+$("admAdd").addEventListener("click", async function(){
+  var name = getVal("adm_name"), email = getVal("adm_email");
+  if(!name || !email){ appMsg("Add both a name and an email.", "err"); return; }
+  var res = await sb.from("admins").insert({ name: name, email: email });
+  if(res.error){ appMsg(errText(res.error), "err"); return; }
+  await logActivity("Added an admin", name + " <" + email + ">");
+  setVal("adm_name",""); setVal("adm_email","");
+  loadAdmins();
+  appMsg("Saved. " + name + " is on the admins list.", "ok");
+});
+$("adminList").addEventListener("click", async function(ev){
+  var b = ev.target.closest("[data-admdel]"); if(!b) return;
+  var email = b.getAttribute("data-admdel");
+  if(adminsCache.length <= 1){ appMsg("There must always be at least one admin.", "err"); return; }
+  if(!window.confirm("Take " + email + " off the admins list? They will no longer be able to sign in here.")) return;
+  var res = await sb.from("admins").delete().eq("email", email);
+  if(res.error){ appMsg(errText(res.error), "err"); return; }
+  await logActivity("Removed an admin", email);
+  loadAdmins();
+  appMsg("Saved. " + email + " is off the admins list.", "ok");
+});
+
+/* ---------------- (i) Activity ---------------- */
+async function loadActivity(){
+  $("activityList").innerHTML = '<p class="hint">Loading the latest changes…</p>';
+  try{
+    var res = await sb.from("activity_log").select("*").order("created_at", { ascending: false }).limit(100);
+    if(res.error) throw res.error;
+    var list = res.data || [];
+    if(!list.length){ $("activityList").innerHTML = '<div class="card"><p class="hint">No changes recorded yet.</p></div>'; return; }
+    $("activityList").innerHTML = list.map(function(r){
+      return '<div class="listitem"><span class="t">'+esc(r.action||"Change")+'</span>'+(r.detail ? ' — '+esc(r.detail) : "")+'<br><span class="hint">'+esc(r.admin_email||"")+' · '+esc(fmtDate(r.created_at))+'</span></div>';
+    }).join("");
+  }catch(e){ $("activityList").innerHTML = '<p class="hint">The latest changes could not be loaded. '+esc(errText(e))+'</p>'; }
+}
+
+/* ---------------- (j) Backup & restore ---------------- */
+$("backupBtn").addEventListener("click", async function(){
+  $("backupMsg").textContent = "Getting the backup…";
+  try{
+    var res = await sb.from("museum_content").select("*");
+    if(res.error) throw res.error;
+    var payload = { made: new Date().toISOString(), pieces: res.data || [] };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var day = new Date().toISOString().slice(0,10);
+    a.href = url; a.download = "museum-backup-" + day + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    $("backupMsg").textContent = "Backup downloaded — " + (res.data||[]).length + " pieces inside.";
+  }catch(e){ $("backupMsg").textContent = errText(e); }
+});
+$("restoreFile").addEventListener("change", async function(){
+  pendingRestore = null;
+  $("restoreConfirm").classList.add("hidden");
+  var f = this.files && this.files[0];
+  if(!f){ $("restoreInfo").innerHTML = ""; return; }
+  try{
+    var text = await f.text();
+    var parsed = JSON.parse(text);
+    var pieces = null;
+    if(Array.isArray(parsed)) pieces = parsed;
+    else if(parsed && Array.isArray(parsed.pieces)) pieces = parsed.pieces;
+    else if(parsed && Array.isArray(parsed.museum_content)) pieces = parsed.museum_content;
+    if(!pieces) throw new Error("That file does not look like a museum backup.");
+    pendingRestore = pieces;
+    $("restoreInfo").innerHTML = '<p>This backup holds <b>' + pieces.length + '</b> pieces. Restoring brings every one of them back as it was in the backup, and replaces anything saved since with the same name.</p>';
+    $("restoreConfirm").classList.remove("hidden");
+  }catch(e){ $("restoreInfo").innerHTML = '<p class="hint">'+esc(errText(e))+'</p>'; }
+});
+$("restoreConfirm").addEventListener("click", async function(){
+  if(!pendingRestore) return;
+  if(!window.confirm("Restore this backup now? Current pieces with the same name will be replaced.")) return;
+  var btn = $("restoreConfirm"); btn.disabled = true;
+  try{
+    for(var i=0;i<pendingRestore.length;i++){
+      var p = pendingRestore[i];
+      if(!p || !p.key) continue;
+      var res = await sb.from("museum_content").upsert({ key: p.key, value: p.value, status: p.status || "draft" }, { onConflict: "key" });
+      if(res.error) throw res.error;
+    }
+    await logActivity("Restored from a backup", pendingRestore.length + " pieces");
+    appMsg("Restored. " + pendingRestore.length + " pieces are back as they were in the backup.", "ok");
+    pendingRestore = null;
+    $("restoreConfirm").classList.add("hidden");
+    $("restoreInfo").innerHTML = "";
+    $("restoreFile").value = "";
+  }catch(e){ appMsg(errText(e), "err"); }
+  btn.disabled = false;
+});
+
+/* ---------------- (k) QR codes ---------------- */
+var qrDone = false;
+function renderQR(){
+  var cards = [
+    { name: "Museum", link: LINKS.museum, file: "qr-museum.png" },
+    { name: "Passport", link: LINKS.passport, file: "qr-passport.png" },
+    { name: "The Journey West", link: LINKS.timeline, file: "qr-journey-west.png" },
+    { name: "Did You Catch It? Quiz", link: LINKS.quiz, file: "qr-did-you-catch-it.png" }
+  ];
+  $("qrGrid").innerHTML = cards.map(function(c, i){
+    return '<div class="card" style="text-align:center"><h3>'+esc(c.name)+'</h3>'+
+      '<img class="qrimg hidden" id="qrImg'+i+'" alt="QR code for '+esc(c.name)+'">'+
+      '<p class="hint" id="qrNote'+i+'">The code could not be drawn just now. The link still works — copy it from here.</p>'+
+      '<p style="word-break:break-all;font-size:.9rem">'+esc(c.link)+'</p>'+
+      '<a class="btn gold hidden" id="qrDl'+i+'" download="'+c.file+'">Download</a></div>';
+  }).join("");
+  if(!window.QRCode || !window.QRCode.toDataURL){ window.__onQRReady = function(){ renderQR(); }; return; }
+  cards.forEach(function(c, i){
+    try{
+      window.QRCode.toDataURL(c.link, { width: 1024, margin: 2, color: { dark: "#0A1551", light: "#FFFFFF" } }, function(err, url){
+        if(err || !url) return;
+        var img = $("qrImg"+i), dl = $("qrDl"+i), note = $("qrNote"+i);
+        if(img){ img.src = url; img.classList.remove("hidden"); }
+        if(dl){ dl.href = url; dl.classList.remove("hidden"); }
+        if(note){ note.classList.add("hidden"); }
+      });
+    }catch(e){ /* the link text and note stay visible */ }
+  });
+  qrDone = true;
+}
+</script>
+</body>
+</html>

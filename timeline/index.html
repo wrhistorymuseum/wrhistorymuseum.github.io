@@ -441,7 +441,89 @@
 </div>
 
 <script>
-(function () {
+  /* ============ Phase 1 completion: back-end timeline content ============
+     The Journey West now also lives in the museum's Supabase project
+     (table museum_content) as generic rows: one "timeline" row and
+     one "timeline_stop" row per stop. This loader fetches just
+     those rows and hands them to the bootstrap at the end of the
+     page; the journey builds from them when they are complete and
+     valid, and from the embedded stops below otherwise. Any
+     failure -- offline, timeout, tables not created yet -- resolves
+     to null, and null means the page behaves exactly as it always
+     has. Only published rows are consumed: a row whose status says
+     otherwise is treated as not there, and before the status column
+     exists every row counts as published. */
+  (function () {
+    "use strict";
+    var SB_URL = "https://wlyfawqpsozcclwztmpv.supabase.co";
+    var SB_KEY = "sb_publishable_EEypoHRVCHw5hAlOV77lZA_g7Xtf9Pw";
+    function fetchRows(withStatus) {
+      var sel = withStatus ? "key,value,status" : "key,value";
+      return fetch(SB_URL + "/rest/v1/museum_content?select=" + sel + "&key=like.timeline*", {
+        headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }
+      }).then(function (r) {
+        if (!r.ok) throw new Error("timeline rows not available");
+        return r.json();
+      });
+    }
+    function isNum(n) { return typeof n === "number" && isFinite(n); }
+    function isStr(s) { return typeof s === "string" && s.length > 0; }
+    function normalize(rows) {
+      var meta = null, stops = [];
+      (rows || []).forEach(function (row) {
+        if (!row || !row.key) return;
+        if (typeof row.status === "string" && row.status !== "published") return;
+        var v = row.value;
+        if (!v || typeof v !== "object") return;
+        if (v.type === "timeline" && row.key === "timeline:journey-west") meta = v;
+        else if (v.type === "timeline_stop" && v.timeline === "timeline:journey-west") stops.push(v);
+      });
+      if (!meta || !stops.length) return null;
+      if (!meta.end || !isStr(meta.end.title) || !isNum(meta.end.x) || !isNum(meta.end.y)) return null;
+      stops.sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+      var out = [{ type: "overview" }], pics = {};
+      for (var i = 0; i < stops.length; i++) {
+        var s = stops[i];
+        if (!isStr(s.year) || !isStr(s.title) || !isStr(s.area) || !isStr(s.text) || !isNum(s.x) || !isNum(s.y)) return null;
+        out.push({ year: s.year, title: s.title, area: s.area, x: s.x, y: s.y, text: s.text });
+        if (s.photos && s.photos.length) {
+          var set = [];
+          for (var j = 0; j < s.photos.length; j++) {
+            var p = s.photos[j];
+            if (!p || !isStr(p.file) || typeof p.caption !== "string") return null;
+            set.push([p.file, p.caption]);
+          }
+          if (set.length) pics[i + 1] = set;
+        }
+      }
+      out.push({ type: "end", title: meta.end.title, kicker: isStr(meta.end.kicker) ? meta.end.kicker : null, credit: isStr(meta.end.credit) ? meta.end.credit : null, x: meta.end.x, y: meta.end.y });
+      return { meta: meta, stops: out, pics: pics, total: out.length - 1 };
+    }
+    window.__WR_TIMELINE_PROMISE = (function () {
+      try {
+        var ctl = ("AbortController" in window) ? new AbortController() : null;
+        var timer = ctl ? setTimeout(function () { try { ctl.abort(); } catch (e) {} }, 4000) : null;
+        var first = fetch(SB_URL + "/rest/v1/museum_content?select=key,value,status&key=like.timeline*", {
+          headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY },
+          signal: ctl ? ctl.signal : undefined
+        }).then(function (r) {
+          if (!r.ok) throw new Error("timeline rows not available");
+          return r.json();
+        });
+        return first.catch(function () {
+          /* the status column may not exist yet (the Part 2
+             migration not run): ask again without it */
+          return fetchRows(false);
+        }).then(function (rows) {
+          if (timer) clearTimeout(timer);
+          return normalize(rows);
+        }).catch(function () { return null; });
+      } catch (e) { return Promise.resolve(null); }
+    })();
+  })();
+</script>
+<script>
+window.__WR_TIMELINE_BUILD = function () {
   "use strict";
 
   /* ---------------- Stop data (index 0 = overview, 20 = end card) ---------------- */
@@ -530,6 +612,15 @@
   var TOTAL = 20; /* journey stops 1..20; stop 0 is the overview */
   var CARD_W = 520;
 
+  /* Phase 1 completion: when the loader brought back-end timeline
+     rows, they replace the embedded stops above; anything else and
+     the embedded data stands, exactly as before. */
+  if (window.__WR_TIMELINE_BE) {
+    STOPS = window.__WR_TIMELINE_BE.stops;
+    PICS = window.__WR_TIMELINE_BE.pics;
+    TOTAL = window.__WR_TIMELINE_BE.total;
+  }
+
   var plane = document.getElementById("plane");
   var cardsWrap = document.getElementById("cards");
   var svg = document.getElementById("pathSvg");
@@ -550,9 +641,9 @@
     if (s.type === "end") {
       el.className = "card end";
       el.innerHTML =
-        '<div class="end-kicker">1939 &mdash; Today</div>' +
+        '<div class="end-kicker">' + (s.kicker || "1939 &mdash; Today") + "</div>" +
         "<h2>" + s.title + "</h2>" +
-        '<p class="credit">Brought to you by the Epistoleus and the History &amp; Archives Committee, Sigma Gamma Rho Sorority, Inc., Western Region</p>' +
+        '<p class="credit">' + (s.credit || "Brought to you by the Epistoleus and the History &amp; Archives Committee, Sigma Gamma Rho Sorority, Inc., Western Region") + "</p>" +
         '<div class="end-actions">' +
           '<a class="btn btn-gold" href="../interactive-3d-museum/">Enter the Museum</a>' +
           '<a class="btn btn-outline" href="../">Back to the Archive</a>' +
@@ -759,13 +850,29 @@
 
   apply();
 
+  /* the year table for Find Your Year, derived from the stops the
+     journey was actually built with: for a year with more than one
+     stop, the latest of them (the find-your-year rule) */
+  function computeYearStops() {
+    var byYear = {}, out = [];
+    for (var i = 1; i < STOPS.length; i++) {
+      var s = STOPS[i];
+      if (s && s.year) byYear[parseInt(s.year, 10)] = i;
+    }
+    Object.keys(byYear).sort(function (a, b) { return a - b; }).forEach(function (y) {
+      out.push([parseInt(y, 10), byYear[y]]);
+    });
+    return out;
+  }
+
   /* small hook for testing and future embedding */
   window.JourneyWest = {
     goTo: goTo,
     get current() { return cur; },
-    total: TOTAL
+    total: TOTAL,
+    yearStops: computeYearStops()
   };
-})();
+};
 </script>
 
 <!-- ======================= FIND YOUR YEAR ======================= -->
@@ -792,7 +899,7 @@
   }
 </style>
 <script>
-(function () {
+(function fyMain() {
   "use strict";
   /* The journey's dated stops, year -> stop number. For a year with
      more than one stop (1994), the stop named is the latest of them. */
@@ -809,7 +916,15 @@
     return target;
   }
   var controls = document.getElementById("controls");
-  if (!controls || !window.JourneyWest) return;
+  if (!controls || !window.JourneyWest) {
+    /* the journey may still be building from back-end rows (see the
+       loader at the top of the page); wait for it and try again */
+    if ((fyMain.tries = (fyMain.tries || 0) + 1) < 40) setTimeout(fyMain, 200);
+    return;
+  }
+  /* when the stops came from the back end, the year table comes
+     from them too; the embedded table above is the fallback */
+  if (window.JourneyWest.yearStops && window.JourneyWest.yearStops.length) YEAR_STOPS = window.JourneyWest.yearStops;
   var form = document.createElement("form");
   form.className = "fy";
   form.setAttribute("aria-label", "Find your year");
@@ -835,6 +950,62 @@
   window.JourneyWest.stopForYear = stopForYear;
 })();
 </script>
+<script>
+  /* ============ Phase 1 completion: start the journey ============
+     The journey builds from the back-end timeline rows when the
+     loader brought them, and from the embedded stops otherwise.
+     The wait is capped, the way the museum's is: a slow or missing
+     back end never holds the page. */
+  (function () {
+    "use strict";
+    var started = false;
+    function applyMeta(meta) {
+      if (!meta) return;
+      try {
+        var bt = document.querySelector("header.topbar .b-title");
+        if (bt && meta.headerTitle) bt.textContent = meta.headerTitle;
+        var bs = document.querySelector("header.topbar .b-sub");
+        if (bs && meta.headerSub) bs.textContent = meta.headerSub;
+        var ov = document.getElementById("overview");
+        if (!ov) return;
+        var eb = ov.querySelector(".eyebrow"); if (eb && meta.eyebrow) eb.textContent = meta.eyebrow;
+        var h1 = ov.querySelector("h1"); if (h1 && meta.title) h1.textContent = meta.title;
+        var sub = ov.querySelector(".subtitle"); if (sub && meta.subtitle) sub.textContent = meta.subtitle;
+        var sc = ov.querySelector(".scope"); if (sc && meta.scope) sc.textContent = meta.scope;
+        var sh = ov.querySelector(".shoulders"); if (sh && meta.shoulders) sh.textContent = meta.shoulders;
+        var we = ov.querySelector(".welcome"); if (we && meta.welcome) we.textContent = meta.welcome;
+        var bg = ov.querySelector(".begin"); if (bg && meta.beginLabel) bg.textContent = meta.beginLabel;
+        var cr = ov.querySelector(".credit-line"); if (cr && meta.creditLine) cr.textContent = meta.creditLine;
+        if (meta.chips && meta.chips.length) {
+          var chips = ov.querySelectorAll(".chip");
+          meta.chips.forEach(function (chip, i) {
+            var el = chips[i];
+            if (!el || !chip) return;
+            var small = el.querySelector("small");
+            if (chip.label) el.textContent = chip.label;
+            if (small && chip.sub) { small.textContent = chip.sub; el.appendChild(small); }
+            if (chip.goto) el.setAttribute("data-goto", String(chip.goto));
+          });
+        }
+      } catch (e) {}
+    }
+    function start(be) {
+      if (started) return;
+      started = true;
+      if (be) {
+        applyMeta(be.meta);
+        window.__WR_TIMELINE_BE = { stops: be.stops, pics: be.pics, total: be.total };
+      }
+      window.__WR_TIMELINE_BUILD();
+    }
+    var p = window.__WR_TIMELINE_PROMISE || Promise.resolve(null);
+    Promise.race([
+      p,
+      new Promise(function (res) { setTimeout(function () { res(null); }, 1800); })
+    ]).then(start, function () { start(null); });
+  })();
+</script>
+
 
 </body>
 </html>
