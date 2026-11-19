@@ -6844,11 +6844,11 @@ document.addEventListener("DOMContentLoaded", async function () {
       ctx.fillText("PASSPORT", CX + 15, 116);
       spacing(0);
       if (logoImg && logoImg.naturalWidth) {
-        var logoW = 460;
+        var logoW = 408;
         var logoH = Math.round(logoW * logoImg.naturalHeight / logoImg.naturalWidth);
         var padX = 38, padY = 30;
         var plaqueW = logoW + padX * 2, plaqueH = logoH + padY * 2;
-        var plaqueX = CX - plaqueW / 2, plaqueY = 198;
+        var plaqueX = CX - plaqueW / 2, plaqueY = 190;
         ctx.save();
         ctx.shadowColor = "rgba(0,0,0,0.35)";
         ctx.shadowBlur = 26;
@@ -6861,15 +6861,22 @@ document.addEventListener("DOMContentLoaded", async function () {
       }
       ctx.font = "58px " + BEBAS;
       ctx.fillStyle = GOLD; spacing(4);
-      ctx.fillText("WESTERN REGION HISTORY MUSEUM", CX + 2, 592);
+      ctx.fillText("WESTERN REGION HISTORY MUSEUM", CX + 2, 528);
       ctx.font = "30px " + BEBAS;
       ctx.fillStyle = GOLD_LT; spacing(9);
-      ctx.fillText("SIGMA GAMMA RHO SORORITY, INC.", CX + 4, 656);
+      ctx.fillText("SIGMA GAMMA RHO SORORITY, INC.", CX + 4, 584);
       spacing(0);
-      /* the tag line, printed on the cover so it travels with the image */
-      ctx.font = "30px " + BEBAS;
-      ctx.fillStyle = GOLD_LT; spacing(6);
-      ctx.fillText("TAG @WESTERNSGRHO", CX + 3, 700);
+      /* what to do with the card, printed on the cover where the
+         lone tag line used to sit, so the directions travel with
+         the image wherever it is posted */
+      ctx.font = "26px " + BEBAS;
+      ctx.fillStyle = GOLD; spacing(4);
+      ctx.fillText("WHAT TO DO WITH YOUR CARD", CX + 2, 626);
+      ctx.font = "23px " + BEBAS;
+      ctx.fillStyle = GOLD_LT; spacing(1);
+      ctx.fillText("1. Save this card to your photos.", CX + 1, 654);
+      ctx.fillText("2. Post it to your Story.", CX + 1, 682);
+      ctx.fillText("3. Tag @westernsgrho so the region can celebrate with you.", CX + 1, 710);
       spacing(0);
 
       /* ZONE 2 — THE STAMPED PAGE (cream) */
@@ -6919,6 +6926,24 @@ document.addEventListener("DOMContentLoaded", async function () {
       holderField("JOINED", holder.joined, PAGE_Y + 408, PAGE_Y + 442, PAGE_Y + 464);
       holderField("COMPLETED", holder.completed, PAGE_Y + 492, PAGE_Y + 526, PAGE_Y + 548);
 
+      /* fit a line of stamp lettering inside its mark: shrink the
+         font until the measured line fits the width allowed, so
+         the letters sit inside the ring, never on top of it */
+      function fitFont(px, text, maxW, sp) {
+        var s = px, g = sp;
+        ctx.font = s + "px " + BEBAS; spacing(g);
+        while (ctx.measureText(text).width > maxW && (s > 7 || g > 0)) {
+          if (s > 7) { s -= 1; } else { g = Math.max(0, g - 0.5); }
+          ctx.font = s + "px " + BEBAS; spacing(g);
+        }
+        return s;
+      }
+      /* the width of a circle of radius rIn at height dy from centre */
+      function chordW(rIn, dy) {
+        var q = rIn * rIn - dy * dy;
+        return q > 0 ? 2 * Math.sqrt(q) : 0;
+      }
+
       function circleStamp(cx, cy, r, rot, ink, alpha, year, city) {
         ctx.save();
         ctx.translate(cx, cy);
@@ -6930,11 +6955,11 @@ document.addEventListener("DOMContentLoaded", async function () {
         ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
         ctx.lineWidth = 1.8;
         ctx.beginPath(); ctx.arc(0, 0, r - 13, 0, Math.PI * 2); ctx.stroke();
-        ctx.font = Math.round(r * 0.17) + "px " + BEBAS; spacing(2);
+        fitFont(Math.round(r * 0.17), "WESTERN REGION", chordW(r - 13, -r * 0.53) * 0.94, 2);
         ctx.fillText("WESTERN REGION", 1, Math.round(-r * 0.53));
-        ctx.font = Math.round(r * 0.66) + "px " + BEBAS; spacing(1);
+        fitFont(Math.round(r * 0.66), year, chordW(r - 13, -r * 0.04) * 0.96, 1);
         ctx.fillText(year, 0, Math.round(-r * 0.04));
-        ctx.font = Math.round(r * 0.29) + "px " + BEBAS; spacing(1);
+        fitFont(Math.round(r * 0.29), city, chordW(r - 13, r * 0.48) * 0.94, 1);
         ctx.fillText(city, 0, Math.round(r * 0.48));
         spacing(0);
         ctx.restore();
@@ -6950,9 +6975,9 @@ document.addEventListener("DOMContentLoaded", async function () {
         rr(-w / 2, -h / 2, w, h, 14); ctx.stroke();
         ctx.lineWidth = 1.5;
         rr(-w / 2 + 10, -h / 2 + 10, w - 20, h - 20, 9); ctx.stroke();
-        ctx.font = Math.round(h * 0.35) + "px " + BEBAS; spacing(0);
+        fitFont(Math.round(h * 0.35), symbol, (w - 20) * 0.94, 0);
         ctx.fillText(symbol, 0, Math.round(-h * 0.2));
-        ctx.font = Math.round(h * 0.26) + "px " + BEBAS; spacing(2);
+        fitFont(Math.round(h * 0.26), name, (w - 20) * 0.94, 2);
         ctx.fillText(name, 1, Math.round(h * 0.25));
         spacing(0);
         ctx.restore();
@@ -6968,7 +6993,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         rr(-w / 2, -h / 2, w, h, 10); ctx.stroke();
         ctx.lineWidth = 1.8;
         rr(-w / 2 + 9, -h / 2 + 9, w - 18, h - 18, 7); ctx.stroke();
-        ctx.font = Math.round(h * 0.64) + "px " + BEBAS; spacing(2);
+        fitFont(Math.round(h * 0.64), str, (w - 18) * 0.94, 2);
         ctx.fillText(str, 1, 2);
         spacing(0);
         ctx.restore();
@@ -6985,7 +7010,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
       ctx.font = "21px " + BEBAS;
       ctx.fillStyle = INK_GRAY; spacing(1);
-      wrapText(ctx,
+      wrapText(
         "Brought to you by the Epistoleus and the History & Archives Committee, Sigma Gamma Rho Sorority, Inc., Western Region.",
         CX, 1816, 860, 30);
       spacing(0);
