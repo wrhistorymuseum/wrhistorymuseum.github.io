@@ -1525,7 +1525,14 @@
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
 
-          ctx.fillStyle = NAVY_DEEP;
+          /* the background: lifted royal navy at the top easing
+             down to the deep navy the frame has always worn */
+          var bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+          bgGrad.addColorStop(0, "#2a48ad");
+          bgGrad.addColorStop(0.4, "#223a92");
+          bgGrad.addColorStop(0.72, "#182a66");
+          bgGrad.addColorStop(1, NAVY_DEEP);
+          ctx.fillStyle = bgGrad;
           ctx.fillRect(0, 0, W, H);
 
           /* the photo window */
@@ -1570,7 +1577,7 @@
              with 2026 Founders Month beneath it — the logo and both
              words sit fully inside the circle, nothing squeezed */
           ctx.save();
-          ctx.translate(886, 1316);
+          ctx.translate(886, 1400);
           var SR = 120;
           ctx.save();
           ctx.shadowColor = "rgba(0,0,0,0.35)";
