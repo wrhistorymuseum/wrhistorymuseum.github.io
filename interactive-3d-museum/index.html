@@ -844,6 +844,10 @@
     .wr-th-item-t { display: block; font-size: 16.5px; font-weight: 600; color: var(--ink); line-height: 1.3; }
     .wr-th-item-n { display: block; font-size: 13.5px; color: #46506e; line-height: 1.45; margin-top: 2px; }
     .wr-th-empty { font-size: 15.5px; color: #46506e; line-height: 1.6; margin: 6px 0 0; }
+    /* the choosing state: no screening is playing, so the
+       now-playing lines stand down and the program is the menu */
+    #wr-theatre.th-menu .wr-th-now, #wr-theatre.th-menu .wr-th-note { display: none; }
+    #wr-theatre.th-menu .wr-th-progtitle { margin-top: 2px; }
   </style>
 </head>
   <body class="welcome-open">
@@ -2285,6 +2289,10 @@ document.addEventListener("DOMContentLoaded", async function () {
           { id: "Ml6tkN-sYl4", title: "Dear Founders: Founders Week, 1964", note: "The 1964 Founders Week observance at Morning Star Church in Oakland." }
         ];
         var THEATRE_VIEW = null;
+        /* which screening the screen's card currently names, and
+           the room build's way to repaint that card */
+        var thScreenClip = 0;
+        var thScreenRedraw = null;
         /* the room's build record, shared with the player hook
            below so the room can be checked from outside: the
            chairs placed, the program board's rows, the doorway */
@@ -2374,7 +2382,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           var thScrCtx = thScrCanvas.getContext("2d");
           var thScrTex = new THREE.CanvasTexture(thScrCanvas);
           thScrTex.colorSpace = THREE.SRGBColorSpace; thScrTex.anisotropy = 8;
-          (function drawTheatreScreen() {
+          function drawTheatreScreen() {
             var ctx = thScrCtx, w = 1600, h = 900;
             var grad = ctx.createLinearGradient(0, 0, 0, h);
             grad.addColorStop(0, "#16265e"); grad.addColorStop(1, "#0a1233");
@@ -2386,7 +2394,7 @@ document.addEventListener("DOMContentLoaded", async function () {
               ctx.fillStyle = "#efd27e"; ctx.font = "400 48px " + LABEL;
               ctx.fillText("N O W  S H O W I N G", w / 2, 250);
               ctx.fillStyle = "#f7f0dc"; ctx.font = "500 104px " + HEAD;
-              wrapText(ctx, THEATRE_CLIPS[0].title.toUpperCase(), w / 2, 440, w - 300, 118);
+              wrapText(ctx, (THEATRE_CLIPS[thScreenClip] || THEATRE_CLIPS[0]).title.toUpperCase(), w / 2, 440, w - 300, 118);
               ctx.fillStyle = "#b9c6ee"; ctx.font = "italic 44px " + SERIF;
               ctx.fillText("Tap the screen for the program", w / 2, 760);
             } else {
@@ -2400,7 +2408,9 @@ document.addEventListener("DOMContentLoaded", async function () {
               ctx.fillStyle = "#b9c6ee"; ctx.font = "italic 38px " + SERIF;
               ctx.fillText("Tap the screen for the program", w / 2, 726);
             }
-          })();
+          }
+          drawTheatreScreen();
+          thScreenRedraw = function () { drawTheatreScreen(); thScrTex.needsUpdate = true; };
           var thScreen = new THREE.Mesh(new THREE.PlaneGeometry(scrW, scrH),
             new THREE.MeshStandardMaterial({ map: thScrTex, roughness: 0.6 }));
           /* the card sits in front of the gold and velvet backing
@@ -2597,11 +2607,20 @@ document.addEventListener("DOMContentLoaded", async function () {
             });
           });
 
-          /* where the Menu's glide lands: mid-room, facing the screen */
+          /* where the Menu's glide lands: standing in the centre
+             aisle between the two chair rows, facing the screen.
+             The aisle is the room's one clear channel: from here
+             every ray to the screen crosses the front row's plane
+             inside the aisle's width (or above the chair backs
+             entirely), so no chair back covers any part of the
+             screen or a single word on its card. From behind the
+             back row the front chairs covered the card's lower
+             lines, which is why the viewpoint stands here. */
           THEATRE_VIEW = {
-            pos: new THREE.Vector3(thMidX - 1.5, EYE, -1.2),
+            pos: new THREE.Vector3(thMidX, EYE, 1.7),
             target: new THREE.Vector3(scrX, 2.3, HALL.z)
           };
+          TH_ROOM.view = THEATRE_VIEW;
         })();
 
         /* ---- the program: the player sheet. One embed at a time;
@@ -2639,6 +2658,10 @@ document.addEventListener("DOMContentLoaded", async function () {
           var clip = THEATRE_CLIPS[i];
           if (!clip || !thIframe) return;
           thCurrent = i;
+          if (thSheet) thSheet.classList.remove("th-menu");
+          /* the screen's card names what is playing */
+          thScreenClip = i;
+          if (thScreenRedraw) thScreenRedraw();
           if (thScreenWrap) thScreenWrap.hidden = false;
           thIframe.src = "https://www.youtube-nocookie.com/embed/" + clip.id + "?rel=0&autoplay=1";
           if (thNowEl) thNowEl.textContent = clip.title;
@@ -2657,11 +2680,59 @@ document.addEventListener("DOMContentLoaded", async function () {
         function closeTheatrePlayer() {
           if (thIframe) thIframe.src = "about:blank";
           thCurrent = -1;
-          if (thSheet) thSheet.classList.remove("open");
+          if (thSheet) { thSheet.classList.remove("open"); thSheet.classList.remove("th-menu"); }
+        }
+
+        /* ---- the program menu: the player sheet in its choosing
+           state, presented when a visitor comes into the theatre.
+           The program is listed and nothing is playing; tapping a
+           screening starts it in this same sheet (playTheatreClip),
+           and the sheet's close button puts the menu away without
+           playing anything. ---- */
+        function openTheatreMenu() {
+          if (!thSheet) return;
+          var others = document.querySelectorAll(".wr-sheet.open");
+          for (var oi = 0; oi < others.length; oi++) if (others[oi] !== thSheet) others[oi].classList.remove("open");
+          if (thIframe) thIframe.src = "about:blank";
+          thCurrent = -1;
+          if (thScreenWrap) thScreenWrap.hidden = true;
+          if (thNowEl) thNowEl.textContent = "";
+          if (thNoteEl) thNoteEl.textContent = "";
+          renderTheatreProgram();
+          thSheet.classList.add("th-menu");
+          thSheet.classList.add("open");
+          needsRender = true;
+        }
+        /* Presentation is latched per entry: arriving in the
+           theatre presents the menu once; the latch clears only
+           after the visitor has been out of the room a few
+           seconds, so the section flips a long glide fires on
+           its way across the hall never present it twice, and
+           moving about inside the room never presents it again.
+           It never presents over the welcome, during a tour
+           (guided or self-led), or over the player itself. */
+        var thMenuLatch = false, thMenuLatchTimer = 0;
+        function maybeTheatreMenu(prev, id) {
+          if (id === "theatre") {
+            if (thMenuLatchTimer) { clearTimeout(thMenuLatchTimer); thMenuLatchTimer = 0; }
+            if (thMenuLatch) return;
+            if (!thSheet || !THEATRE_CLIPS.length) return;
+            var wEl = document.getElementById("welcome");
+            if (wEl && !wEl.classList.contains("hidden")) return;
+            if (document.body.classList.contains("welcome-open")) return;
+            if (typeof tour !== "undefined" && tour && tour.on) return;
+            if (typeof sgActive !== "undefined" && sgActive) return;
+            if (thSheet.classList.contains("open")) return;
+            thMenuLatch = true;
+            openTheatreMenu();
+          } else if (prev === "theatre" && thMenuLatch) {
+            if (thMenuLatchTimer) clearTimeout(thMenuLatchTimer);
+            thMenuLatchTimer = setTimeout(function () { thMenuLatch = false; thMenuLatchTimer = 0; }, 2500);
+          }
         }
         var thSheetX = document.getElementById("wr-theatre-x");
         if (thSheetX) thSheetX.addEventListener("click", closeTheatrePlayer);
-        window.__WR_THEATRE = { open: openTheatrePlayer, close: closeTheatrePlayer, clips: THEATRE_CLIPS, room: TH_ROOM };
+        window.__WR_THEATRE = { open: openTheatrePlayer, close: closeTheatrePlayer, menu: openTheatreMenu, clips: THEATRE_CLIPS, room: TH_ROOM };
 
         /* ============ exhibit viewpoints: fit the whole frame ============
            Distance is derived from the frame's real size and the camera's
@@ -2891,10 +2962,12 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
         function setActiveSection(id) {
           stopNarration();
+          var prevSection = activeSection;
           activeSection = id;
           buildTimeline(id);
           markBar(id);
           if (window.__WR_LOG) window.__WR_LOG("room_view", id, sectionName(id));
+          maybeTheatreMenu(prevSection, id);
         }
         function gotoSection(id) {
           closePanel();
