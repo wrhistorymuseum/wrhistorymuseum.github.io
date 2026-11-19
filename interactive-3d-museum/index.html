@@ -2448,6 +2448,25 @@ document.addEventListener("DOMContentLoaded", async function () {
           var thScrCtx = thScrCanvas.getContext("2d");
           var thScrTex = new THREE.CanvasTexture(thScrCanvas);
           thScrTex.colorSpace = THREE.SRGBColorSpace; thScrTex.anisotropy = 8;
+          /* the card carries the room's options as two bands:
+             CHOOSE A FILM opens the program menu, and BACK TO
+             THE HALL glides back to the hall's home viewpoint.
+             The bands' geometry, in the card's own 1600x900
+             texture coordinates, is kept on the room record,
+             where the tap handler reads it, so what is drawn
+             and what is tapped can never drift apart. */
+          var TH_BANDS = { x0: 430, x1: 1170, film: [612, 697], hall: [717, 802] };
+          TH_ROOM.screenBands = TH_BANDS;
+          function drawTheatreBand(y0, label) {
+            var ctx = thScrCtx, bw = TH_BANDS.x1 - TH_BANDS.x0, bh = TH_BANDS.film[1] - TH_BANDS.film[0];
+            ctx.fillStyle = "rgba(8,14,40,0.66)";
+            ctx.fillRect(TH_BANDS.x0, y0, bw, bh);
+            ctx.strokeStyle = "#dfb136"; ctx.lineWidth = 3;
+            ctx.strokeRect(TH_BANDS.x0, y0, bw, bh);
+            ctx.fillStyle = "#efd27e"; ctx.font = "500 50px " + HEAD;
+            ctx.textAlign = "center";
+            ctx.fillText(label, 800, y0 + 59);
+          }
           function drawTheatreScreen() {
             var ctx = thScrCtx, w = 1600, h = 900;
             var grad = ctx.createLinearGradient(0, 0, 0, h);
@@ -2461,18 +2480,18 @@ document.addEventListener("DOMContentLoaded", async function () {
               ctx.fillText("N O W  S H O W I N G", w / 2, 250);
               ctx.fillStyle = "#f7f0dc"; ctx.font = "500 104px " + HEAD;
               wrapText(ctx, (THEATRE_CLIPS[thScreenClip] || THEATRE_CLIPS[0]).title.toUpperCase(), w / 2, 440, w - 300, 118);
-              ctx.fillStyle = "#b9c6ee"; ctx.font = "italic 44px " + SERIF;
-              ctx.fillText("Tap the screen for the program", w / 2, 760);
+              drawTheatreBand(TH_BANDS.film[0], "CHOOSE A FILM");
+              drawTheatreBand(TH_BANDS.hall[0], "BACK TO THE HALL");
             } else {
               ctx.fillStyle = "#efd27e"; ctx.font = "400 44px " + LABEL;
-              ctx.fillText("T H E  W E S T E R N  R E G I O N", w / 2, 252);
+              ctx.fillText("T H E  W E S T E R N  R E G I O N", w / 2, 218);
               ctx.fillStyle = "#f7f0dc"; ctx.font = "500 150px " + HEAD;
-              ctx.fillText("THE THEATRE", w / 2, 442);
-              ctx.fillStyle = "#dfb136"; ctx.fillRect(w / 2 - 190, 492, 380, 5); ctx.fillRect(w / 2 - 190, 504, 380, 2);
+              ctx.fillText("THE THEATRE", w / 2, 382);
+              ctx.fillStyle = "#dfb136"; ctx.fillRect(w / 2 - 190, 432, 380, 5); ctx.fillRect(w / 2 - 190, 444, 380, 2);
               ctx.fillStyle = "#efd27e"; ctx.font = "italic 54px " + SERIF;
-              ctx.fillText("The region, in motion", w / 2, 606);
-              ctx.fillStyle = "#b9c6ee"; ctx.font = "italic 38px " + SERIF;
-              ctx.fillText("Tap the screen for the program", w / 2, 726);
+              ctx.fillText("The region, in motion", w / 2, 520);
+              drawTheatreBand(TH_BANDS.film[0], "CHOOSE A FILM");
+              drawTheatreBand(TH_BANDS.hall[0], "BACK TO THE HALL");
             }
           }
           drawTheatreScreen();
@@ -2490,8 +2509,9 @@ document.addEventListener("DOMContentLoaded", async function () {
           TH_ROOM.screen = { x: scrX, cy: scrCY, z: HALL.z - 0.205, w: scrW, h: scrH };
 
           /* the wall screen carries its card and nothing else:
-             choosing a film opens the viewing screen (below), and
-             the card repaints to name the film chosen */
+             the card names what is showing and carries the room's
+             options (its two bands, below); films play only on
+             the viewing screen, never on this wall */
 
           var thSpot = new THREE.SpotLight(0xffd9a0, 0.9, 12, 0.7, 0.9, 1.2);
           thSpot.position.set(scrX, 4.3, HALL.z - 2.6);
@@ -2774,11 +2794,12 @@ document.addEventListener("DOMContentLoaded", async function () {
           if (thIframe) thIframe.src = "about:blank";
           thCurrent = -1;
           if (thSheet) { thSheet.classList.remove("open"); thSheet.classList.remove("th-menu"); }
+          thMenuSettle();
         }
 
         /* ---- the viewing screen. Choosing a screening — the
-           entry menu, a poster, a plaque, a row of the program
-           board, or the screen's own card — opens it: a
+           entry menu, a poster, a plaque, or a row of the
+           program board — opens it: a
            full-viewport screen on the museum's deep navy, the
            film's title in gold over a gold-bordered frame, and
            the film itself in a real video element, with its own
@@ -2857,6 +2878,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             try { thViewerVideo.load(); } catch (e) {}
           }
           thViewerCurrent = -1;
+          thMenuSettle();
           needsRender = true;
         }
         function failViewerToSheet() {
@@ -2892,7 +2914,30 @@ document.addEventListener("DOMContentLoaded", async function () {
           if (clip.file) openTheatreViewer(i);
           else openTheatrePlayer(i);
         }
-        function tapTheatreScreen() { chooseTheatreFilm(thScreenClip); }
+        /* the wall screen's tap, routed by its card: the tap
+           arrives with the screen plane's texture coordinates,
+           mapped back into the card's own 1600x900 space, where
+           the option bands were drawn. The BACK TO THE HALL band
+           glides back to the hall's home viewpoint, the same
+           destination as Reset View; the CHOOSE A FILM band —
+           and anywhere else on the card — opens the program
+           menu, the card's primary action. The wall itself
+           plays nothing. */
+        function tapTheatreScreen(uv) {
+          var bands = (typeof TH_ROOM !== "undefined" && TH_ROOM) ? TH_ROOM.screenBands : null;
+          if (bands && uv && typeof uv.x === "number" && typeof uv.y === "number") {
+            var px = uv.x * 1600, py = (1 - uv.y) * 900;
+            if (px >= bands.x0 && px <= bands.x1 && py >= bands.hall[0] && py <= bands.hall[1]) { theatreBackToHall(); return; }
+          }
+          openTheatreMenu();
+        }
+        function theatreBackToHall() {
+          closeTheatreViewer();
+          closeTheatrePlayer();
+          cancelGlide(); closePanel(); setActiveSection("hall");
+          glideTo(HOME.pos, HOME.yaw, 0, reduced ? 0.01 : 1.4, null);
+          needsRender = true;
+        }
 
         /* ---- the program menu: the player sheet in its choosing
            state, presented when a visitor comes into the theatre.
@@ -2924,9 +2969,26 @@ document.addEventListener("DOMContentLoaded", async function () {
            It never presents over the welcome, during a tour
            (guided or self-led), or over the player itself. */
         var thMenuLatch = false, thMenuLatchTimer = 0;
+        function thUiOpen() {
+          return !!((thSheet && thSheet.classList.contains("open")) || (thViewer && thViewer.classList.contains("open")));
+        }
+        /* Closing a theatre screen while standing in the theatre
+           settles the entry: the visitor has dealt with the menu
+           for this visit, so it does not come back when the film
+           closes, and any latch-clearing countdown still running
+           is cancelled with it. */
+        function thMenuSettle() {
+          if (typeof activeSection === "undefined" || activeSection !== "theatre") return;
+          if (thMenuLatchTimer) { clearTimeout(thMenuLatchTimer); thMenuLatchTimer = 0; }
+          thMenuLatch = true;
+        }
         function maybeTheatreMenu(prev, id) {
           if (id === "theatre") {
             if (thMenuLatchTimer) { clearTimeout(thMenuLatchTimer); thMenuLatchTimer = 0; }
+            /* a theatre screen is already up: the entry is being
+               dealt with, and no second menu is presented — the
+               latch is settled here, never left false by a guard */
+            if (thUiOpen()) { thMenuLatch = true; return; }
             if (thMenuLatch) return;
             if (!thSheet || !THEATRE_CLIPS.length) return;
             var wEl = document.getElementById("welcome");
@@ -2934,11 +2996,15 @@ document.addEventListener("DOMContentLoaded", async function () {
             if (document.body.classList.contains("welcome-open")) return;
             if (typeof tour !== "undefined" && tour && tour.on) return;
             if (typeof sgActive !== "undefined" && sgActive) return;
-            if (thSheet.classList.contains("open")) return;
-            if (thViewer && thViewer.classList.contains("open")) return;
             thMenuLatch = true;
             openTheatreMenu();
           } else if (prev === "theatre" && thMenuLatch) {
+            /* a departure only counts when no theatre screen is
+               up: while the menu, the player, or the viewing
+               screen is open, the visitor is still in the theatre,
+               and the section flips a glide fires on its way in
+               or out are not a leaving */
+            if (thUiOpen()) return;
             if (thMenuLatchTimer) clearTimeout(thMenuLatchTimer);
             thMenuLatchTimer = setTimeout(function () { thMenuLatch = false; thMenuLatchTimer = 0; }, 2500);
           }
@@ -3060,7 +3126,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           var hits = raycaster.intersectObjects(pickables, false);
           if (hits.length) {
             if (hits[0].object.userData.quiz) { window.open(QUIZ_URL, "_blank", "noopener"); return; }
-            if (hits[0].object.userData.theatreScreen) { tapTheatreScreen(); return; }
+            if (hits[0].object.userData.theatreScreen) { tapTheatreScreen(hits[0].uv); return; }
             if (typeof hits[0].object.userData.theatre === "number") { chooseTheatreFilm(hits[0].object.userData.theatre); return; }
             focusExhibit(hits[0].object.userData.exhibit, true);
           }
