@@ -2726,7 +2726,11 @@ document.addEventListener("DOMContentLoaded", async function () {
              chair is a keep-out, as the benches were; the aisle and
              the floor behind the back row stay clear, so the
              posters, the screen, the board, and the room's gold
-             mark all stay within reach. ---- */
+             mark all stay within reach. The backs are low
+             (Nov 19): a backrest top of about 0.86 m, so the
+             screen shows whole over the seats from every
+             standing viewpoint in the room, behind either row
+             as much as in the aisle. ---- */
           var thFabric = new THREE.MeshStandardMaterial({ color: 0x1f3fa0, roughness: 1 });
           function thChair(cx, cz, row) {
             var g = new THREE.Group();
@@ -2738,9 +2742,9 @@ document.addEventListener("DOMContentLoaded", async function () {
             box(0.58, 0.04, 0.04, M.gold, 0, 0.47, 0.315, g);
             var back = new THREE.Group();
             back.position.set(0, 0.52, -0.26); back.rotation.x = -0.12;
-            var backCushion = new THREE.Mesh(new THREE.RoundedBoxGeometry(0.56, 0.82, 0.13, 3, 0.05), thFabric);
-            backCushion.position.y = 0.41; backCushion.castShadow = true; back.add(backCushion);
-            box(0.58, 0.05, 0.145, M.gold, 0, 0.845, 0, back);
+            var backCushion = new THREE.Mesh(new THREE.RoundedBoxGeometry(0.56, 0.28, 0.13, 3, 0.05), thFabric);
+            backCushion.position.y = 0.14; backCushion.castShadow = true; back.add(backCushion);
+            box(0.58, 0.05, 0.145, M.gold, 0, 0.305, 0, back);
             g.add(back);
             [-1, 1].forEach(function (s) {
               box(0.09, 0.06, 0.52, thFabric, s * 0.325, 0.7, 0, g);
@@ -2763,9 +2767,11 @@ document.addEventListener("DOMContentLoaded", async function () {
              every ray to the screen crosses the front row's plane
              inside the aisle's width (or above the chair backs
              entirely), so no chair back covers any part of the
-             screen or a single word on its card. From behind the
-             back row the front chairs covered the card's lower
-             lines, which is why the viewpoint stands here. */
+             screen or a single word on its card. With the low
+             backs the screen clears the chairs from behind
+             either row as well; the aisle stays the viewpoint
+             because it is the one place a visitor can stand
+             between the rows, close to the screen. */
           THEATRE_VIEW = {
             pos: new THREE.Vector3(thMidX, EYE, 1.7),
             target: new THREE.Vector3(scrX, 2.3, HALL.z)
