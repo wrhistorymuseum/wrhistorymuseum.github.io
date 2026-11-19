@@ -584,47 +584,7 @@
             </div>
           </div>
 
-          <!-- ================= GET YOUR PASSPORT =================
-               The registration prompt: shown only while the visitor is
-               signed out with no holder saved on this device. The
-               account panel further down the page is unchanged. -->
-          <div class="regblock" id="regBlock" hidden>
-            <h3 class="regblock-t">Get your passport</h3>
-            <p class="regblock-line">Sign in with your email and your stamps follow you on any device.</p>
-            <form class="account-form" id="regSigninForm">
-              <label for="regEmail" style="position:absolute;left:-9999px;">Email address</label>
-              <input type="email" id="regEmail" placeholder="Email address" autocomplete="email" required />
-              <button type="submit" class="account-btn" id="regSigninBtn">Email me a sign-in link</button>
-            </form>
-            <p class="account-msg" id="regSigninMsg" role="status" hidden></p>
-            <form class="regblock-fields" id="regHolderForm">
-              <div>
-                <label for="regName">Your name</label>
-                <input type="text" id="regName" autocomplete="name" />
-              </div>
-              <div>
-                <label for="regChapter">Your chapter</label>
-                <input type="text" id="regChapter" />
-              </div>
-              <div>
-                <label for="regJoined">When did you join Sigma Gamma Rho?</label>
-                <input type="text" id="regJoined" placeholder="e.g., Fall 2010" />
-              </div>
-              <div>
-                <label for="regMemberType">Member type</label>
-                <select id="regMemberType">
-                  <option value="">Select one</option>
-                  <option value="Alumnae">Alumnae</option>
-                  <option value="Undergraduate">Undergraduate</option>
-                  <option value="Philo">Philo</option>
-                </select>
-              </div>
-              <button type="submit" class="account-btn">Save your details</button>
-              <p class="account-msg" id="regHolderMsg" role="status" hidden></p>
-            </form>
-          </div>
-
-    <!-- ================= THE STOPS ================= -->
+          <!-- ================= THE STOPS ================= -->
     <section id="stops">
       <div class="wrap">
         <div class="sec-head">
@@ -1840,6 +1800,7 @@
         } catch (e) { sb = null; }
 
         var session = null;
+        var sessionKnown = false; /* true once the session check has answered either way */
         var profile = null; /* { full_name, chapter, joined, member_type } once loaded */
         var profileFormOpen = false;
         var syncedUserId = null;
@@ -1848,8 +1809,10 @@
 
         function renderAccount() {
           if (!sb || !acctPanel) { return; }
+          /* until the session check answers, the panel stays hidden, so a
+             signed-in visitor never sees the sign-in form, not even briefly */
+          if (!sessionKnown) { acctPanel.hidden = true; return; }
           acctPanel.hidden = false;
-          renderRegBlock();
           if (isSignedIn()) {
             acctOut.hidden = true;
             acctIn.hidden = false;
@@ -1993,6 +1956,7 @@
         };
 
         function onSession(next) {
+          sessionKnown = true;
           session = next || null;
           if (isSignedIn()) {
             renderAccount();
@@ -2089,83 +2053,6 @@
           maybeSetGuestCompletionDate();
           prefillHolderFromLocal();
         }
-
-        /* ---------- registration prompt (under the cover, above the
-           walk): shown only while the visitor is signed out with no
-           holder saved on this device. The email half calls the same
-           signInWithOtp flow as the account panel below; the details
-           half writes the same holder record the completion-card
-           fields write (wr-passport-holder). ---------- */
-        var regBlock = document.getElementById("regBlock");
-        var regSigninForm = document.getElementById("regSigninForm");
-        var regEmail = document.getElementById("regEmail");
-        var regSigninBtn = document.getElementById("regSigninBtn");
-        var regSigninMsg = document.getElementById("regSigninMsg");
-        var regHolderForm = document.getElementById("regHolderForm");
-        var regName = document.getElementById("regName");
-        var regChapter = document.getElementById("regChapter");
-        var regJoined = document.getElementById("regJoined");
-        var regMemberType = document.getElementById("regMemberType");
-        var regHolderMsg = document.getElementById("regHolderMsg");
-
-        function hasLocalHolder() {
-          var h = loadHolderLocal();
-          return !!(h.name || h.chapter || h.joined || h.memberType);
-        }
-        function renderRegBlock() {
-          if (!regBlock) { return; }
-          regBlock.hidden = !(!isSignedIn() && !hasLocalHolder());
-        }
-        if (regSigninForm) {
-          regSigninForm.addEventListener("submit", function (ev) {
-            ev.preventDefault();
-            var email = regEmail.value.trim();
-            if (!email) { return; }
-            if (!sb) {
-              regSigninMsg.hidden = false;
-              regSigninMsg.textContent = "That sign-in link could not be sent. Check the email address and try again.";
-              return;
-            }
-            regSigninBtn.disabled = true;
-            regSigninMsg.hidden = false;
-            regSigninMsg.textContent = "Sending your sign-in link\u2026";
-            sb.auth.signInWithOtp({
-              email: email,
-              options: { emailRedirectTo: REDIRECT_URL }
-            }).then(function (res) {
-              regSigninBtn.disabled = false;
-              regSigninMsg.hidden = false;
-              regSigninMsg.textContent = (res && res.error)
-                ? "That sign-in link could not be sent. Check the email address and try again."
-                : "Check your email \u2014 your sign-in link is on its way.";
-            }, function () {
-              regSigninBtn.disabled = false;
-              regSigninMsg.hidden = false;
-              regSigninMsg.textContent = "That sign-in link could not be sent. Check the email address and try again.";
-            });
-          });
-        }
-        if (regHolderForm) {
-          regHolderForm.addEventListener("submit", function (ev) {
-            ev.preventDefault();
-            var h = {
-              name: regName.value.trim(),
-              chapter: regChapter.value.trim(),
-              joined: regJoined.value.trim(),
-              memberType: regMemberType.value
-            };
-            try { storage.setItem(HOLDER_KEY, JSON.stringify(h)); } catch (e) {}
-            if (holderNameInput) { holderNameInput.value = h.name; }
-            if (holderChapterInput) { holderChapterInput.value = h.chapter; }
-            if (holderJoinedInput) { holderJoinedInput.value = h.joined; }
-            if (holderMemberInput) { holderMemberInput.value = h.memberType; }
-            syncDataPage();
-            regHolderMsg.hidden = false;
-            regHolderMsg.textContent = "Saved.";
-            renderRegBlock();
-          });
-        }
-        renderRegBlock();
 
         /* guest holder fields persist on this device as she types */
         function onHolderInput() {

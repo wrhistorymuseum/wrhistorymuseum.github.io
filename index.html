@@ -694,8 +694,10 @@
       var signedInAs = document.getElementById("wrAcctSignedInAs");
       var signOutBtn = document.getElementById("wrAcctSignOut");
       if (!auth || !form || !emailInput || !sendBtn || !msg || !userBox || !signedInAs || !signOutBtn) { return; }
-      auth.hidden = false;
+      /* the auth area stays hidden until the session check answers, so a
+         signed-in visitor never sees the sign-in form, not even briefly */
       function show(session) {
+        auth.hidden = false;
         var user = session && session.user;
         if (user) {
           form.hidden = true;

@@ -4184,6 +4184,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   var SB_URL = "https://wlyfawqpsozcclwztmpv.supabase.co";
   var SB_KEY = "sb_publishable_EEypoHRVCHw5hAlOV77lZA_g7Xtf9Pw";
   var sb = null, sbSession = null, sbProfile = null;
+  var sbSessionKnown = false; /* true once the session check has answered either way */
   function sbPushStamp(id) {
     if (!sb || !sbSession || !sbSession.user) return;
     try {
@@ -4224,11 +4225,15 @@ document.addEventListener("DOMContentLoaded", async function () {
       if (!window.supabase || !window.supabase.createClient) return;
       sb = window.supabase.createClient(SB_URL, SB_KEY);
       sb.auth.getSession().then(function (res) {
+        sbSessionKnown = true;
         sbSession = (res && res.data) ? res.data.session : null;
         if (sbSession) { sbSyncStamps(); sbLoadProfile(); }
-      }, function () {});
+        renderReg();
+      }, function () { sbSessionKnown = true; renderReg(); });
       sb.auth.onAuthStateChange(function (event, next) {
+        sbSessionKnown = true;
         sbSession = next || null;
+        renderReg();
         if (event === "SIGNED_IN" && window.__WR_LOG) window.__WR_LOG("sign_in", "", (next && next.user && next.user.email) || "");
         if (sbSession) { sbSyncStamps(); sbLoadProfile(); }
       });
@@ -4280,7 +4285,9 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
   function renderReg() {
     if (!ppRegEl) return;
-    ppRegEl.hidden = !(!sbSession && !hasHolder());
+    /* hidden until the session check answers, so a signed-in visitor
+       never sees the sign-in prompt, not even briefly */
+    ppRegEl.hidden = !(sbSessionKnown && !sbSession && !hasHolder());
   }
   function regMsg(el, text) {
     if (!el) return;
@@ -8284,16 +8291,19 @@ body.wr7-navon #wr7-nav { display: flex; }
 
   /* ---------- Supabase (own client, same project) ---------- */
   var sb7 = null, mySession = null, remoteWalker = null, sb7Tries = 0;
+  var session7Known = false; /* true once the session check has answered either way */
   function initSb7() {
     if (sb7) return;
     if (window.supabase && window.supabase.createClient) {
       try {
         sb7 = window.supabase.createClient(SB_URL, SB_KEY);
         sb7.auth.getSession().then(function (r) {
+          session7Known = true;
           mySession = (r && r.data && r.data.session) || null;
           afterSession();
-        }, function () {});
+        }, function () { session7Known = true; afterSession(); });
         sb7.auth.onAuthStateChange(function (_evt, session) {
+          session7Known = true;
           mySession = session || null;
           afterSession();
         });
@@ -8827,6 +8837,11 @@ body.wr7-navon #wr7-nav { display: flex; }
   function renderSigninRows() {
     var box = $("wr-profile-signin");
     if (!box) return;
+    /* until the session check answers, the sign-in card stays hidden, so a
+       signed-in visitor never sees the sign-in form, not even briefly */
+    var card = box.parentNode;
+    if (!session7Known) { box.innerHTML = ""; if (card) card.hidden = true; return; }
+    if (card) card.hidden = false;
     box.innerHTML = "";
     if (mySession && mySession.user) {
       var line = el("p", "wr7-bline");
