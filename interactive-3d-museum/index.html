@@ -848,6 +848,42 @@
        now-playing lines stand down and the program is the menu */
     #wr-theatre.th-menu .wr-th-now, #wr-theatre.th-menu .wr-th-note { display: none; }
     #wr-theatre.th-menu .wr-th-progtitle { margin-top: 2px; }
+    /* direction lines: one plain sentence each. The menu's line
+       shows only while choosing; the player's line only while a
+       film is up here in the sheet. */
+    .wr-th-menu-dir { display: none; font-size: 14.5px; color: #46506e; line-height: 1.5; margin: 6px 0 0; }
+    #wr-theatre.th-menu .wr-th-menu-dir { display: block; }
+    .wr-th-play-dir { font-size: 14.5px; color: #46506e; line-height: 1.5; margin: 0 0 14px; }
+    #wr-theatre.th-menu .wr-th-play-dir { display: none; }
+    /* the now-playing bar: one slim strip while a film is on the
+       room's screen — the film's title, and the two things a
+       visitor can do about it. It floats clear of the walk dock
+       and the bottom nav, and it is not shown at all until a film
+       is playing. */
+    #wr-th-bar { position: fixed; left: 50%; bottom: calc(196px + env(safe-area-inset-bottom, 0px)); z-index: 45;
+      width: min(600px, calc(100vw - 24px)); display: flex; align-items: center; gap: 10px;
+      background: rgba(10, 18, 51, .92); border: 1px solid rgba(223, 177, 54, .55); border-radius: 999px;
+      padding: 8px 8px 8px 20px; box-shadow: 0 10px 30px rgba(9, 17, 46, .45);
+      opacity: 0; visibility: hidden; transform: translate(-50%, 16px);
+      transition: opacity .25s ease, transform .25s ease, visibility 0s linear .25s; }
+    #wr-th-bar.open { opacity: 1; visibility: visible; transform: translate(-50%, 0);
+      transition: opacity .25s ease, transform .25s ease; }
+    #wr-th-bar-t { flex: 1 1 auto; min-width: 0; font-family: var(--font-label); font-size: 16px;
+      letter-spacing: .03em; color: #f7f0dc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #wr-th-bar button { flex: none; appearance: none; cursor: pointer; min-height: 48px; border-radius: 999px;
+      font-family: var(--font-label); letter-spacing: .06em; font-size: 14px; padding: 10px 18px; }
+    #wr-th-bar-stop { background: transparent; color: #efd27e; border: 1.5px solid rgba(223, 177, 54, .7); }
+    #wr-th-bar-big { background: #dfb136; color: #14225f; border: 1.5px solid #dfb136; font-weight: 700; }
+    @media (max-width: 700px) {
+      /* the theatre on phones: the sheet already floats with sky
+         around it on this width; here the program rows grow to
+         thumb size, and the now-playing bar stays thumb-sized and
+         clear of the nav and the dock */
+      #wr-theatre .wr-th-item { min-height: 52px; padding: 14px 16px; }
+      #wr-th-bar { padding: 8px 8px 8px 16px; gap: 8px; }
+      #wr-th-bar-t { font-size: 14.5px; }
+      #wr-th-bar button { padding: 10px 13px; font-size: 13px; }
+    }
   </style>
 </head>
   <body class="welcome-open">
@@ -1056,8 +1092,10 @@
       <div class="wr-sheet-head">
         <p class="wr-sheet-t">The Theatre</p>
         <p class="wr-sheet-s">The region, in motion.</p>
+        <p class="wr-th-menu-dir">Tap a film and it plays on the screen.</p>
       </div>
       <div class="wr-sheet-body">
+        <p class="wr-th-play-dir">The film is playing here, bigger. Close this to go back to the theatre.</p>
         <div class="wr-th-screen" id="wr-th-screen" hidden>
           <iframe id="wr-th-iframe" title="Theatre screening" src="about:blank" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
         </div>
@@ -1068,6 +1106,12 @@
         <p class="wr-th-empty" id="wr-th-empty">Screenings will be listed here.</p>
       </div>
     </section>
+
+    <div id="wr-th-bar" role="group" aria-label="Now playing on the theatre screen">
+      <span id="wr-th-bar-t"></span>
+      <button id="wr-th-bar-stop" type="button">STOP</button>
+      <button id="wr-th-bar-big" type="button">WATCH IT BIGGER</button>
+    </div>
 
     <aside id="panel" aria-label="Exhibit reader" aria-hidden="true">
       <button id="panelclose" type="button" aria-label="Close reader">✕</button>
@@ -2268,31 +2312,45 @@ document.addEventListener("DOMContentLoaded", async function () {
            for each screening along the walls, a program board beside
            the screen, and rows of theatre chairs facing it. The room
            has its own entrance at the gateway: a dark partition with
-           a gold-framed doorway under the banner. Tapping the screen
-           or a poster opens the program
-           sheet (below) and plays the screening there. The screenings
-           are embedded YouTube players, never files in the museum,
-           and they are not exhibits: no readers, no passport stamp,
-           and no place in the explored counter.
+           a gold-framed doorway under the banner. Choosing a
+           screening — from the program menu the room presents, a
+           poster, a plaque, a row of the program board, or the
+           screen's own card — plays it on the screen itself, from
+           the film file the museum carries in theatre/; the program
+           sheet (below) is the bigger view of a screening and the
+           fallback if a film file cannot play. The screenings are
+           not exhibits: no readers, no passport stamp, and no place
+           in the explored counter.
 
            TO ADD A SCREENING: add one entry to THEATRE_CLIPS, in
            program order — the posters, the screen's card, and the
            program all build themselves from this list.
              id:    the video's YouTube id (the part after watch?v=)
+             file:  the film file in theatre/, played on the screen
              title: the title as it should read in the museum
              note:  one line shown under the title                  */
         var THEATRE_CLIPS = [
-          { id: "A_nnpYkYkmc", title: "Dear Founders: Los Angeles, 1940", note: "Hattie McDaniel's Oscar year and the first Founders Day program." },
-          { id: "7lBfFW6YHF8", title: "Dear Founders: Phoenix, 1950", note: "A new chapter on East Jefferson Street celebrates Founders Day." },
-          { id: "_NtVEQwUbj4", title: "Dear Founders: Portland, 1954", note: "A Sunday Founders Day gathering in royal blue and gold." },
-          { id: "Qnok5DwCNos", title: "Dear Founders: Oakland, 1958", note: "Sally N. Edwards speaks on race relations at Arlington Community Church." },
-          { id: "Ml6tkN-sYl4", title: "Dear Founders: Founders Week, 1964", note: "The 1964 Founders Week observance at Morning Star Church in Oakland." }
+          { id: "A_nnpYkYkmc", file: "../theatre/clip-03-los-angeles-1940-16x9.mp4", title: "Dear Founders: Los Angeles, 1940", note: "Hattie McDaniel's Oscar year and the first Founders Day program." },
+          { id: "7lBfFW6YHF8", file: "../theatre/clip-04-phoenix-1950-16x9.mp4", title: "Dear Founders: Phoenix, 1950", note: "A new chapter on East Jefferson Street celebrates Founders Day." },
+          { id: "_NtVEQwUbj4", file: "../theatre/clip-05-portland-1954-16x9.mp4", title: "Dear Founders: Portland, 1954", note: "A Sunday Founders Day gathering in royal blue and gold." },
+          { id: "Qnok5DwCNos", file: "../theatre/clip-02-oakland-1958-16x9.mp4", title: "Dear Founders: Oakland, 1958", note: "Sally N. Edwards speaks on race relations at Arlington Community Church." },
+          { id: "Ml6tkN-sYl4", file: "../theatre/clip-01-founders-week-16x9.mp4", title: "Dear Founders: Founders Week, 1964", note: "The 1964 Founders Week observance at Morning Star Church in Oakland." }
         ];
         var THEATRE_VIEW = null;
         /* which screening the screen's card currently names, and
            the room build's way to repaint that card */
         var thScreenClip = 0;
         var thScreenRedraw = null;
+        /* the screen's own player: the room build fills these in —
+           a way to start a film on the screen, a way to stop it and
+           bring the card back, the screening's live state, and the
+           two hooks the room build calls when a film ends or a film
+           file cannot play */
+        var thScreenPlay = null;
+        var thScreenStop = null;
+        var thScreenStateRef = null;
+        var thScreenEndedHook = null;
+        var thScreenFailHook = null;
         /* the room's build record, shared with the player hook
            below so the room can be checked from outside: the
            chairs placed, the program board's rows, the doorway */
@@ -2419,7 +2477,91 @@ document.addEventListener("DOMContentLoaded", async function () {
              the card whole, leaving a plain gold slab on the wall */
           thScreen.position.set(scrX, scrCY, HALL.z - 0.205); thScreen.rotation.y = Math.PI;
           thScreen.userData.theatre = 0;
+          thScreen.userData.theatreScreen = true;
           scene.add(thScreen); pickables.push(thScreen);
+
+          /* ---- the screen as a screen: a chosen film plays here,
+             on this plane, from the film file the museum carries in
+             theatre/. A hidden video element feeds a video texture;
+             while a film plays, the plane gives itself over to the
+             film, and a small render pump keeps the frames coming
+             (the hall otherwise renders only when something moves).
+             When the film ends, is stopped, or the visitor leaves
+             the room, the NOW SHOWING card comes back, naming the
+             film. If the file cannot play, the fail hook hands the
+             screening to the program sheet's player instead, so a
+             chosen film never dead-ends. ---- */
+          var thVideo = document.createElement("video");
+          thVideo.setAttribute("playsinline", "");
+          thVideo.playsInline = true;
+          thVideo.preload = "auto";
+          thVideo.style.display = "none";
+          document.body.appendChild(thVideo);
+          var thVideoTex = null;
+          var thPlayState = { playing: false, index: -1, file: "", mapIsVideo: false, attempt: 0, videoEl: thVideo };
+          function thShowCard() {
+            thScreen.material.map = thScrTex;
+            thScreen.material.needsUpdate = true;
+            drawTheatreScreen();
+            thScrTex.needsUpdate = true;
+            thPlayState.mapIsVideo = false;
+            needsRender = true;
+          }
+          function thShowFilm() {
+            if (!thVideoTex) {
+              thVideoTex = new THREE.VideoTexture(thVideo);
+              thVideoTex.colorSpace = THREE.SRGBColorSpace;
+            }
+            thScreen.material.map = thVideoTex;
+            thScreen.material.needsUpdate = true;
+            thPlayState.mapIsVideo = true;
+            needsRender = true;
+          }
+          function thPump() {
+            if (!thPlayState.playing) return;
+            needsRender = true;
+            requestAnimationFrame(thPump);
+          }
+          function thStopInternal() {
+            thPlayState.playing = false;
+            thPlayState.index = -1;
+            thPlayState.file = "";
+            try { thVideo.pause(); } catch (e) {}
+            thShowCard();
+          }
+          function thFail() {
+            if (!thPlayState.playing && thPlayState.index < 0) return;
+            var i = thPlayState.index;
+            thStopInternal();
+            if (thScreenFailHook) thScreenFailHook(i);
+          }
+          thVideo.addEventListener("error", function () {
+            if (thPlayState.index >= 0 && thVideo.getAttribute("src") === thPlayState.file) thFail();
+          });
+          thVideo.addEventListener("ended", function () {
+            if (!thPlayState.playing) return;
+            thStopInternal();
+            if (thScreenEndedHook) thScreenEndedHook();
+          });
+          thScreenStateRef = thPlayState;
+          thScreenStop = function () { thStopInternal(); };
+          thScreenPlay = function (i) {
+            var clip = THEATRE_CLIPS[i];
+            if (!clip || !clip.file) return false;
+            thPlayState.index = i;
+            thPlayState.file = clip.file;
+            thPlayState.playing = true;
+            thVideo.src = clip.file;
+            thShowFilm();
+            var attempt = ++thPlayState.attempt;
+            var p = null;
+            try { p = thVideo.play(); } catch (e) { p = null; thFail(); }
+            if (p && typeof p.catch === "function") p.catch(function () {
+              if (thPlayState.playing && thPlayState.attempt === attempt) thFail();
+            });
+            thPump();
+            return true;
+          };
           var thSpot = new THREE.SpotLight(0xffd9a0, 0.9, 12, 0.7, 0.9, 1.2);
           thSpot.position.set(scrX, 4.3, HALL.z - 2.6);
           thSpot.target.position.set(scrX, scrCY, HALL.z);
@@ -2621,6 +2763,13 @@ document.addEventListener("DOMContentLoaded", async function () {
             target: new THREE.Vector3(scrX, 2.3, HALL.z)
           };
           TH_ROOM.view = THEATRE_VIEW;
+          /* the phone landing: farther back down the same centre
+             aisle, where the whole screen fits a portrait frame
+             (gotoSection chooses it on narrow screens only) */
+          TH_ROOM.phoneView = {
+            pos: new THREE.Vector3(thMidX, EYE, -5.2),
+            target: THEATRE_VIEW.target
+          };
         })();
 
         /* ---- the program: the player sheet. One embed at a time;
@@ -2649,7 +2798,13 @@ document.addEventListener("DOMContentLoaded", async function () {
               n.className = "wr-th-item-n"; n.textContent = clip.note;
               b.appendChild(n);
             }
-            b.addEventListener("click", function () { playTheatreClip(i); });
+            b.addEventListener("click", function () {
+              /* in the choosing state this list is the menu: a tap
+                 plays the film on the room's screen. In the player
+                 state the same list switches the film in the sheet. */
+              if (thSheet && thSheet.classList.contains("th-menu")) chooseTheatreFilm(i);
+              else playTheatreClip(i);
+            });
             thListEl.appendChild(b);
           });
           if (thEmptyEl) thEmptyEl.hidden = THEATRE_CLIPS.length > 0;
@@ -2683,6 +2838,53 @@ document.addEventListener("DOMContentLoaded", async function () {
           if (thSheet) { thSheet.classList.remove("open"); thSheet.classList.remove("th-menu"); }
         }
 
+        /* ---- playing a film on the screen itself. Choosing a
+           screening (the entry menu, a poster, a plaque, a row of
+           the program board, or the screen's own card) closes the
+           sheet and starts the film on the room's screen, with the
+           one slim bar of controls riding while it plays. The
+           program sheet stays as the bigger view — WATCH IT BIGGER
+           pauses the screen and opens the film there — and as the
+           fallback when a film file cannot play. ---- */
+        var thBar = document.getElementById("wr-th-bar");
+        var thBarTitle = document.getElementById("wr-th-bar-t");
+        var thBarStop = document.getElementById("wr-th-bar-stop");
+        var thBarBig = document.getElementById("wr-th-bar-big");
+        function showThBar(i) {
+          if (thBarTitle) thBarTitle.textContent = THEATRE_CLIPS[i] ? THEATRE_CLIPS[i].title : "";
+          if (thBar) thBar.classList.add("open");
+        }
+        function hideThBar() { if (thBar) thBar.classList.remove("open"); }
+        function stopTheatreScreenPlayback() {
+          if (thScreenStop) thScreenStop();
+          hideThBar();
+        }
+        function chooseTheatreFilm(i) {
+          var clip = THEATRE_CLIPS[i];
+          if (!clip) return;
+          thScreenClip = i;
+          if (thScreenRedraw) thScreenRedraw();
+          if (clip.file && thScreenPlay && thScreenPlay(i)) {
+            closeTheatrePlayer();
+            showThBar(i);
+          } else {
+            openTheatrePlayer(i);
+          }
+        }
+        function tapTheatreScreen() {
+          if (thScreenStateRef && thScreenStateRef.playing) stopTheatreScreenPlayback();
+          else chooseTheatreFilm(thScreenClip);
+        }
+        thScreenEndedHook = function () { hideThBar(); };
+        thScreenFailHook = function (i) { stopTheatreScreenPlayback(); openTheatrePlayer(i); };
+        if (thBarStop) thBarStop.addEventListener("click", function () { stopTheatreScreenPlayback(); });
+        if (thBarBig) thBarBig.addEventListener("click", function () {
+          var i = thScreenStateRef ? thScreenStateRef.index : -1;
+          if (i < 0) i = thScreenClip;
+          stopTheatreScreenPlayback();
+          openTheatrePlayer(i);
+        });
+
         /* ---- the program menu: the player sheet in its choosing
            state, presented when a visitor comes into the theatre.
            The program is listed and nothing is playing; tapping a
@@ -2695,6 +2897,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           for (var oi = 0; oi < others.length; oi++) if (others[oi] !== thSheet) others[oi].classList.remove("open");
           if (thIframe) thIframe.src = "about:blank";
           thCurrent = -1;
+          stopTheatreScreenPlayback();
           if (thScreenWrap) thScreenWrap.hidden = true;
           if (thNowEl) thNowEl.textContent = "";
           if (thNoteEl) thNoteEl.textContent = "";
@@ -2713,6 +2916,9 @@ document.addEventListener("DOMContentLoaded", async function () {
            (guided or self-led), or over the player itself. */
         var thMenuLatch = false, thMenuLatchTimer = 0;
         function maybeTheatreMenu(prev, id) {
+          /* a film on the screen belongs to the room: leaving the
+             theatre, by any path, stops it and brings the card back */
+          if (id !== "theatre") stopTheatreScreenPlayback();
           if (id === "theatre") {
             if (thMenuLatchTimer) { clearTimeout(thMenuLatchTimer); thMenuLatchTimer = 0; }
             if (thMenuLatch) return;
@@ -2732,7 +2938,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
         var thSheetX = document.getElementById("wr-theatre-x");
         if (thSheetX) thSheetX.addEventListener("click", closeTheatrePlayer);
-        window.__WR_THEATRE = { open: openTheatrePlayer, close: closeTheatrePlayer, menu: openTheatreMenu, clips: THEATRE_CLIPS, room: TH_ROOM };
+        window.__WR_THEATRE = { open: openTheatrePlayer, close: closeTheatrePlayer, menu: openTheatreMenu, clips: THEATRE_CLIPS, room: TH_ROOM, choose: chooseTheatreFilm, tapScreen: tapTheatreScreen, stopScreen: stopTheatreScreenPlayback, screenState: function () { return thScreenStateRef; }, bar: thBar };
 
         /* ============ exhibit viewpoints: fit the whole frame ============
            Distance is derived from the frame's real size and the camera's
@@ -2847,7 +3053,8 @@ document.addEventListener("DOMContentLoaded", async function () {
           var hits = raycaster.intersectObjects(pickables, false);
           if (hits.length) {
             if (hits[0].object.userData.quiz) { window.open(QUIZ_URL, "_blank", "noopener"); return; }
-            if (typeof hits[0].object.userData.theatre === "number") { openTheatrePlayer(hits[0].object.userData.theatre); return; }
+            if (hits[0].object.userData.theatreScreen) { tapTheatreScreen(); return; }
+            if (typeof hits[0].object.userData.theatre === "number") { chooseTheatreFilm(hits[0].object.userData.theatre); return; }
             focusExhibit(hits[0].object.userData.exhibit, true);
           }
         }
@@ -2973,8 +3180,14 @@ document.addEventListener("DOMContentLoaded", async function () {
           closePanel();
           if (id === "theatre" && THEATRE_VIEW) {
             setActiveSection(id);
-            var ta = lookAngles(THEATRE_VIEW.pos, THEATRE_VIEW.target);
-            glideTo(THEATRE_VIEW.pos, ta.yaw, ta.pitch, reduced ? 0.01 : 1.9, null);
+            /* on a portrait phone the screen is wider than the view
+               from the aisle seat, so the glide lands farther back
+               down the same aisle, where the whole screen fits the
+               frame; the wider-screen landing is unchanged */
+            var tpos = THEATRE_VIEW.pos;
+            if (window.innerWidth < window.innerHeight && TH_ROOM.phoneView) tpos = TH_ROOM.phoneView.pos;
+            var ta = lookAngles(tpos, THEATRE_VIEW.target);
+            glideTo(tpos, ta.yaw, ta.pitch, reduced ? 0.01 : 1.9, null);
             return;
           }
           setActiveSection(id);
