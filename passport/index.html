@@ -696,7 +696,6 @@
           </div>
           <button class="big-btn" id="downloadCard" type="button"><span class="t">Download your completion card</span></button>
           <button class="big-btn alt" id="shareCard" type="button"><span class="t">Share your passport</span></button>
-          <button class="big-btn alt" id="openFrameCard" type="button"><span class="t">Your Founders Month Frame</span></button>
           <p class="share-msg" id="shareMsg" role="status" hidden></p>
           <div class="shareit" id="shareItCard">
             <p class="shareit-k">Share it</p>
@@ -1656,9 +1655,7 @@
           if (frameSec) frameSec.scrollIntoView({ behavior: "smooth", block: "start" });
         }
         var openFrameBtn = document.getElementById("openFrame");
-        var openFrameCardBtn = document.getElementById("openFrameCard");
         if (openFrameBtn) openFrameBtn.addEventListener("click", openFrameFlow);
-        if (openFrameCardBtn) openFrameCardBtn.addEventListener("click", openFrameFlow);
         document.addEventListener("click", function () { setTimeout(syncFrameLock, 60); });
 
         if (framePick && frameFile) {

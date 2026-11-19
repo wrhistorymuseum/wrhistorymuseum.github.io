@@ -920,7 +920,6 @@
               <li><span class="step" aria-hidden="true">1</span> Use the arrow buttons to walk the hall.</li>
               <li><span class="step" aria-hidden="true">2</span> Tap a gold frame to open its story.</li>
               <li><span class="step" aria-hidden="true">3</span> Or take the guided tour, up top.</li>
-              <li><span class="step" aria-hidden="true">4</span> Use the menu to visit the different sections of the museum.</li>
             </ol>
           </div>
           <p class="viewing-note">Best viewed on an iPad or a computer. The museum was made for a bigger screen, so the rooms, the timeline, and the exhibit panels are easier to see and move through on an iPad or a computer. You can still visit on a phone and everything works there — it is simply a smaller view.</p>
@@ -3590,6 +3589,83 @@ document.addEventListener("DOMContentLoaded", async function () {
           toastTimer = window.setTimeout(function () { toastEl.classList.remove("show"); }, 4200);
         }
 
+        /* ================= walk-up auto-open =================
+           When a visitor walks up to a picture, its story opens on
+           its own — through the same openPanel() a tap on the frame
+           uses, so the explored counter, passport stamps, scavenger
+           marks, and the room question all behave exactly as they do
+           for a tap. Distances are measured to the picture itself
+           (the viewpoint target point on its wall):
+             · it fires only on WALKING INTO reach — crossing the
+               entry radius from outside. Arriving by glide, menu
+               jump, or tour never fires it: the first live look after
+               any of those just takes the position as a baseline;
+             · once it has fired for a picture (or the visitor is
+               standing in its reach), it will not fire for that
+               picture again until the visitor has moved clearly
+               away, past the larger exit radius, and come back;
+             · it never fires while the welcome is up, a glide or a
+               tour (guided or self-guided) is running, the Menu is
+               open, or any reader, article page, photo viewer, or
+               sheet is already open — and walking on with a reader
+               open never queues another one. */
+        var AUTO_ENTRY = 5.6, AUTO_EXIT = 7.0, AUTO_EVERY = 0.2;
+        var autoInside = [], autoLatch = [], autoStale = true, autoClock = 0;
+        var autoLastX = null, autoLastZ = null;
+        exhibitViews.forEach(function () { autoInside.push(false); autoLatch.push(false); });
+        function autoOpenBlocked() {
+          if (document.body.classList.contains("welcome-open")) return true;
+          if (tween) return true;
+          if (tour.on || sgActive) return true;
+          if (panelOpen) return true;
+          if (articleView.classList.contains("open")) return true;
+          if (photoBoxOpen()) return true;
+          if (menuIsOpen()) return true;
+          if (document.querySelector(".wr-sheet.open")) return true;
+          return false;
+        }
+        function autoDist(i) {
+          var t = exhibitViews[i].target;
+          var dx = cam.pos.x - t.x, dz = cam.pos.z - t.z;
+          return Math.sqrt(dx * dx + dz * dz);
+        }
+        function autoOpenTick(dt) {
+          autoClock += dt;
+          if (autoClock < AUTO_EVERY) return;
+          autoClock = 0;
+          /* A jump of the viewpoint between checks — a menu jump or a
+             glide that began and ended inside one check interval —
+             re-arms the baseline, so arriving somewhere new can never
+             look like walking into reach. Walking itself moves the
+             viewpoint far less than this in one interval. */
+          if (autoLastX === null) { autoStale = true; }
+          else {
+            var jdx = cam.pos.x - autoLastX, jdz = cam.pos.z - autoLastZ;
+            if (jdx * jdx + jdz * jdz > 9) autoStale = true;
+          }
+          autoLastX = cam.pos.x; autoLastZ = cam.pos.z;
+          if (autoOpenBlocked()) { autoStale = true; return; }
+          var i, d, closest = -1, closestD = Infinity;
+          for (i = 0; i < exhibitViews.length; i++) {
+            d = autoDist(i);
+            if (d > AUTO_EXIT) autoLatch[i] = false;
+            if (d <= AUTO_ENTRY && d < closestD) { closestD = d; closest = i; }
+          }
+          if (autoStale) {
+            for (i = 0; i < exhibitViews.length; i++) autoInside[i] = autoDist(i) <= AUTO_ENTRY;
+            autoStale = false;
+            return;
+          }
+          if (closest >= 0 && !autoInside[closest] && !autoLatch[closest]) {
+            autoLatch[closest] = true;
+            autoInside[closest] = true;
+            openPanel(closest);
+          }
+          for (i = 0; i < exhibitViews.length; i++) {
+            if (i !== closest) autoInside[i] = autoDist(i) <= AUTO_ENTRY;
+          }
+        }
+
         /* ================= main loop ================= */
         // Frame timing is measured directly: the bundled three.js build's
         // THREE.Clock is its new Timer class, whose getDelta() only advances
@@ -3631,6 +3707,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             if (secNow !== activeSection) setActiveSection(secNow);
             cam.pos.y = EYE;
             applyCam();
+            autoOpenTick(dt);
             if (moving || dragging || needsRender) {
               renderer.render(scene, camera);
               needsRender = false;
