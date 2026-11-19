@@ -2261,8 +2261,11 @@ document.addEventListener("DOMContentLoaded", async function () {
         /* ---- The Theatre: the museum's screening room ----
            A darker room at the east end of the hall, past the last
            Aurora page: a big screen on the south wall, poster frames
-           for each screening along the walls, and benches facing the
-           screen. Tapping the screen or a poster opens the program
+           for each screening along the walls, a program board beside
+           the screen, and rows of theatre chairs facing it. The room
+           has its own entrance at the gateway: a dark partition with
+           a gold-framed doorway under the banner. Tapping the screen
+           or a poster opens the program
            sheet (below) and plays the screening there. The screenings
            are embedded YouTube players, never files in the museum,
            and they are not exhibits: no readers, no passport stamp,
@@ -2278,6 +2281,10 @@ document.addEventListener("DOMContentLoaded", async function () {
           { id: "Ml6tkN-sYl4", title: "Dear Founders: Founders Week, 1964", note: "The 1964 Founders Week observance at Morning Star Church in Oakland." }
         ];
         var THEATRE_VIEW = null;
+        /* the room's build record, shared with the player hook
+           below so the room can be checked from outside: the
+           chairs placed, the program board's rows, the doorway */
+        var TH_ROOM = { chairs: [], chairW: 0.74, boardRows: [], boardTitles: [], doorway: null };
         (function buildTheatre() {
           if (typeof THEATRE_GATE_X !== "number") return;
           var thX0 = THEATRE_GATE_X + 0.4;
@@ -2299,6 +2306,33 @@ document.addEventListener("DOMContentLoaded", async function () {
           });
           var thGlow = new THREE.PointLight(0xffd9a0, 0.4, 18, 1.6);
           thGlow.position.set(thMidX, 3.6, 0); scene.add(thGlow);
+
+          /* ---- the room's own entrance: a dark partition at the
+             gateway plane, so the theatre is entered through a
+             doorway rather than simply reached at the end of the
+             hall. The gateway banner overhead already names it,
+             THE THEATRE; the opening under it is framed in gold
+             like a proscenium — two wall panels, a header over the
+             door, gold jambs and a gold lintel. The panels are
+             fenced with keep-out circles, as the benches and
+             planters are, so visitors pass through the doorway
+             itself. ---- */
+          var thDoorX = THEATRE_GATE_X + 0.10, thDoorHalf = 1.6, thDoorTop = 3.1;
+          var thPanelLen = HALL.z - thDoorHalf;
+          box(0.12, HALL.h, thPanelLen, thWallMat, thDoorX, HALL.h / 2, -(thDoorHalf + thPanelLen / 2));
+          box(0.12, HALL.h, thPanelLen, thWallMat, thDoorX, HALL.h / 2, thDoorHalf + thPanelLen / 2);
+          box(0.12, HALL.h - thDoorTop, thDoorHalf * 2, thWallMat, thDoorX, (thDoorTop + HALL.h) / 2, 0);
+          [-1, 1].forEach(function (s) {
+            box(0.16, thDoorTop, 0.09, M.gold, thDoorX, thDoorTop / 2, s * (thDoorHalf + 0.045));
+          });
+          box(0.16, 0.1, thDoorHalf * 2 + 0.18, M.gold, thDoorX, thDoorTop + 0.05, 0);
+          TH_ROOM.doorway = { x: thDoorX, halfWidth: thDoorHalf, top: thDoorTop, obstacles: 0 };
+          [2.35, 3.55, 4.75, 5.95].forEach(function (zo) {
+            [-1, 1].forEach(function (s) {
+              obstacleCircles.push({ x: thDoorX, z: s * zo, r: 0.72 });
+              TH_ROOM.doorway.obstacles++;
+            });
+          });
 
           /* ---- the room's intro wall, on the north wall just inside
              the gateway, in the same pattern as the Syntaktes Hall
@@ -2365,7 +2399,11 @@ document.addEventListener("DOMContentLoaded", async function () {
           })();
           var thScreen = new THREE.Mesh(new THREE.PlaneGeometry(scrW, scrH),
             new THREE.MeshStandardMaterial({ map: thScrTex, roughness: 0.6 }));
-          thScreen.position.set(scrX, scrCY, HALL.z - 0.16); thScreen.rotation.y = Math.PI;
+          /* the card sits in front of the gold and velvet backing
+             boxes (their room-side faces are at HALL.z - 0.175 and
+             HALL.z - 0.17); any farther back and the boxes swallow
+             the card whole, leaving a plain gold slab on the wall */
+          thScreen.position.set(scrX, scrCY, HALL.z - 0.205); thScreen.rotation.y = Math.PI;
           thScreen.userData.theatre = 0;
           scene.add(thScreen); pickables.push(thScreen);
           var thSpot = new THREE.SpotLight(0xffd9a0, 0.9, 12, 0.7, 0.9, 1.2);
@@ -2380,7 +2418,7 @@ document.addEventListener("DOMContentLoaded", async function () {
              then, so a frame never hangs empty. ---- */
           var thAnchors = [];
           for (var nX = THEATRE_GATE_X + 6.6; nX <= thX1 - 1.4; nX += 2.35) thAnchors.push({ x: nX, wall: -1 });
-          for (var sX1 = thX0 + 1.8; sX1 < scrX - scrW / 2 - 1.7; sX1 += 2.35) thAnchors.push({ x: sX1, wall: 1 });
+          for (var sX1 = thX0 + 1.8; sX1 < scrX - scrW / 2 - 4.1; sX1 += 2.35) thAnchors.push({ x: sX1, wall: 1 });
           for (var sX2 = scrX + scrW / 2 + 1.7; sX2 <= thX1 - 1.4; sX2 += 2.35) thAnchors.push({ x: sX2, wall: 1 });
           THEATRE_CLIPS.forEach(function (clip, i) {
             var a = thAnchors[i % thAnchors.length];
@@ -2439,26 +2477,121 @@ document.addEventListener("DOMContentLoaded", async function () {
             box(pW + 0.3, rail2, 0.08, M.gold, 0, pCY - pH / 2 - 0.115, 0.07, g);
             box(rail2, pH + 0.3, 0.08, M.gold, -pW / 2 - 0.115, pCY, 0.07, g);
             box(rail2, pH + 0.3, 0.08, M.gold, pW / 2 + 0.115, pCY, 0.07, g);
+
+            /* a small title plaque under the frame, in the pattern
+               of the exhibit plaques along the hall */
+            var plqTex = canvasTex(1024, 246, function (ctx, w, h) {
+              ctx.fillStyle = "#2041a5"; ctx.fillRect(0, 0, w, h);
+              ctx.strokeStyle = "#dfb136"; ctx.lineWidth = 6; ctx.strokeRect(12, 12, w - 24, h - 24);
+              ctx.lineWidth = 2; ctx.strokeRect(24, 24, w - 48, h - 48);
+              ctx.textAlign = "center";
+              ctx.fillStyle = "#f7f0dc";
+              var pts = 58;
+              ctx.font = "500 " + pts + "px " + HEAD;
+              while (ctx.measureText(clip.title).width > w - 110 && pts > 26) { pts -= 4; ctx.font = "500 " + pts + "px " + HEAD; }
+              wrapText(ctx, clip.title, w / 2, h / 2 + pts * 0.36, w - 110, pts * 1.18);
+            });
+            var plq = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.36),
+              new THREE.MeshStandardMaterial({ map: plqTex, roughness: 0.6, metalness: 0.25 }));
+            plq.position.set(0, pCY - pH / 2 - 0.42, 0.05);
+            plq.userData.theatre = i; g.add(plq); pickables.push(plq);
+          });
+
+          /* ---- the program board: a marquee on the south wall,
+             west of the screen, listing every screening by title.
+             It builds itself from THEATRE_CLIPS, like the posters
+             and the screen's card; tapping a title's row on the
+             board opens the player at that screening, and tapping
+             anywhere else on the board opens it at the first. ---- */
+          var thBoardX = scrX - 6.0;
+          var thBoardCY = 2.3, thBoardW = 3.0, thBoardH = 2.6;
+          box(thBoardW + 0.3, thBoardH + 0.3, 0.05, M.goldDark, thBoardX, thBoardCY, HALL.z - 0.045);
+          var railB = 0.07;
+          box(thBoardW + 0.3, railB, 0.08, M.gold, thBoardX, thBoardCY + thBoardH / 2 + 0.115, HALL.z - 0.07);
+          box(thBoardW + 0.3, railB, 0.08, M.gold, thBoardX, thBoardCY - thBoardH / 2 - 0.115, HALL.z - 0.07);
+          box(railB, thBoardH + 0.3, 0.08, M.gold, thBoardX - thBoardW / 2 - 0.115, thBoardCY, HALL.z - 0.07);
+          box(railB, thBoardH + 0.3, 0.08, M.gold, thBoardX + thBoardW / 2 + 0.115, thBoardCY, HALL.z - 0.07);
+          var thBoardRows = [];
+          var thBoardTex = canvasTex(1200, 1040, function (ctx, w, h) {
+            var grad = ctx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, "#101c48"); grad.addColorStop(1, "#0a1233");
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+            ctx.strokeStyle = "#dfb136"; ctx.lineWidth = 7; ctx.strokeRect(26, 26, w - 52, h - 52);
+            ctx.lineWidth = 2; ctx.strokeRect(48, 48, w - 96, h - 96);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#efd27e"; ctx.font = "400 84px " + HEAD;
+            ctx.fillText("THE PROGRAM", w / 2, 148);
+            ctx.fillStyle = "#dfb136"; ctx.fillRect(w / 2 - 210, 182, 420, 4); ctx.fillRect(w / 2 - 210, 192, 420, 2);
+            if (!THEATRE_CLIPS.length) {
+              ctx.fillStyle = "#b9c6ee"; ctx.font = "italic 44px " + SERIF;
+              ctx.fillText("Screenings will be listed here.", w / 2, 560);
+              return;
+            }
+            var n = THEATRE_CLIPS.length;
+            var ts = n <= 3 ? 56 : (n <= 5 ? 47 : 39);
+            var areaTop = 236, areaBot = h - 70;
+            var rowH = Math.min(168, (areaBot - areaTop) / n);
+            THEATRE_CLIPS.forEach(function (clip, i) {
+              var cy = areaTop + rowH * (i + 0.5);
+              thBoardRows.push({ i: i, cy: cy, h: rowH });
+              TH_ROOM.boardRows.push(i); TH_ROOM.boardTitles.push(clip.title);
+              ctx.fillStyle = "#efd27e"; ctx.font = "400 " + Math.round(ts * 0.62) + "px " + HEAD;
+              ctx.fillText(String(i + 1) + ".", w / 2, cy - ts * 0.62);
+              ctx.fillStyle = "#f7f0dc"; ctx.font = "500 " + ts + "px " + HEAD;
+              wrapText(ctx, clip.title, w / 2, cy + ts * 0.28, w - 170, ts * 1.16);
+            });
+          });
+          var thBoard = new THREE.Mesh(new THREE.PlaneGeometry(thBoardW, thBoardH),
+            new THREE.MeshStandardMaterial({ map: thBoardTex, roughness: 0.7 }));
+          thBoard.position.set(thBoardX, thBoardCY, HALL.z - 0.085); thBoard.rotation.y = Math.PI;
+          thBoard.userData.theatre = 0;
+          scene.add(thBoard); pickables.push(thBoard);
+          var thHitMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+          thBoardRows.forEach(function (row) {
+            var wy = thBoardCY + thBoardH / 2 - (row.cy / 1040) * thBoardH;
+            var hit = new THREE.Mesh(new THREE.PlaneGeometry(thBoardW - 0.16, (row.h / 1040) * thBoardH * 0.94), thHitMat);
+            hit.position.set(thBoardX, wy, HALL.z - 0.10); hit.rotation.y = Math.PI;
+            hit.userData.theatre = row.i;
+            scene.add(hit); pickables.push(hit);
           });
 
           /* ---- benches facing the screen, on the hall's pattern ---- */
-          function thBench(bx, bz) {
+          /* ---- theatre chairs facing the screen: two rows of
+             four with a centre aisle, in the room's own palette —
+             deep royal-blue cushions, gold trim, dark frames. Each
+             chair is a keep-out, as the benches were; the aisle and
+             the floor behind the back row stay clear, so the
+             posters, the screen, the board, and the room's gold
+             mark all stay within reach. ---- */
+          var thFabric = new THREE.MeshStandardMaterial({ color: 0x1f3fa0, roughness: 1 });
+          function thChair(cx, cz, row) {
             var g = new THREE.Group();
-            var seat = new THREE.Mesh(new THREE.RoundedBoxGeometry(2.6, 0.12, 0.62, 3, 0.05), M.wood);
-            seat.position.y = 0.46; seat.castShadow = true; g.add(seat);
-            var trim = new THREE.Mesh(new THREE.BoxGeometry(2.64, 0.03, 0.66), M.goldDark);
-            trim.position.y = 0.545; g.add(trim);
-            var cushion = new THREE.Mesh(new THREE.RoundedBoxGeometry(2.5, 0.13, 0.56, 3, 0.05), M.velvet);
-            cushion.position.y = 0.62; cushion.castShadow = true; g.add(cushion);
-            [-1.05, 1.05].forEach(function (lx) {
-              var leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.52, 0.5), M.goldDark);
-              leg.position.set(lx, 0.26, 0); g.add(leg);
+            box(0.52, 0.04, 0.52, M.goldDark, 0, 0.02, 0, g);
+            box(0.4, 0.32, 0.4, M.wainscot, 0, 0.18, 0, g);
+            box(0.58, 0.1, 0.56, M.wainscot, 0, 0.38, 0.01, g);
+            var seat = new THREE.Mesh(new THREE.RoundedBoxGeometry(0.56, 0.15, 0.54, 3, 0.05), thFabric);
+            seat.position.set(0, 0.47, 0.03); seat.castShadow = true; g.add(seat);
+            box(0.58, 0.04, 0.04, M.gold, 0, 0.47, 0.315, g);
+            var back = new THREE.Group();
+            back.position.set(0, 0.52, -0.26); back.rotation.x = -0.12;
+            var backCushion = new THREE.Mesh(new THREE.RoundedBoxGeometry(0.56, 0.82, 0.13, 3, 0.05), thFabric);
+            backCushion.position.y = 0.41; backCushion.castShadow = true; back.add(backCushion);
+            box(0.58, 0.05, 0.145, M.gold, 0, 0.845, 0, back);
+            g.add(back);
+            [-1, 1].forEach(function (s) {
+              box(0.09, 0.06, 0.52, thFabric, s * 0.325, 0.7, 0, g);
+              box(0.07, 0.2, 0.07, M.goldDark, s * 0.325, 0.58, 0.16, g);
             });
-            g.position.set(bx, 0, bz); scene.add(g);
-            obstacleCircles.push({ x: bx, z: bz, r: 1.05 });
+            g.position.set(cx, 0, cz); scene.add(g);
+            var ob = { x: cx, z: cz, r: 0.5 };
+            obstacleCircles.push(ob);
+            TH_ROOM.chairs.push({ x: cx, z: cz, row: row, obstacle: ob });
           }
-          thBench(thMidX - 3.4, 1.3);
-          thBench(thMidX + 3.4, -1.5);
+          [2.35, 0.8].forEach(function (rz, ri) {
+            [-1.78, -1.0, 1.0, 1.78].forEach(function (xo) {
+              thChair(thMidX + xo, rz, ri);
+            });
+          });
 
           /* where the Menu's glide lands: mid-room, facing the screen */
           THEATRE_VIEW = {
@@ -2524,7 +2657,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
         var thSheetX = document.getElementById("wr-theatre-x");
         if (thSheetX) thSheetX.addEventListener("click", closeTheatrePlayer);
-        window.__WR_THEATRE = { open: openTheatrePlayer, close: closeTheatrePlayer, clips: THEATRE_CLIPS };
+        window.__WR_THEATRE = { open: openTheatrePlayer, close: closeTheatrePlayer, clips: THEATRE_CLIPS, room: TH_ROOM };
 
         /* ============ exhibit viewpoints: fit the whole frame ============
            Distance is derived from the frame's real size and the camera's
