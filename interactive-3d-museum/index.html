@@ -826,7 +826,26 @@
         .bigbtn.gold { transition: none; }
       }
     </style>
-  </head>
+    <style id="wr-theatre-style">
+    /* ===== The Theatre: the program sheet (player) ===== */
+    #wr-theatre { display: flex; flex-direction: column; }
+    #wr-theatre .wr-sheet-head { flex: none; padding: 22px 76px 14px 24px; border-bottom: 1px solid rgba(27,42,107,.12); }
+    #wr-theatre .wr-sheet-t { font-family: var(--font-label); font-size: 31px; letter-spacing: .03em; color: var(--navy); line-height: 1.1; margin: 0; }
+    #wr-theatre .wr-sheet-s { font-size: 14px; color: #46506e; line-height: 1.5; margin: 3px 0 0; }
+    #wr-theatre .wr-sheet-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 22px 24px calc(28px + env(safe-area-inset-bottom, 0px)); }
+    #wr-theatre .wr-sheet-x { width: 48px; height: 48px; top: 12px; right: 12px; z-index: 5; background: #ffffff; color: var(--navy); border: 2px solid #b08d2e; font-size: 20px; box-shadow: 0 2px 10px rgba(10,18,51,.25); }
+    .wr-th-screen { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #060a24; border-radius: 10px; overflow: hidden; }
+    .wr-th-screen iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .wr-th-now { font-family: var(--font-label); font-size: 24px; color: var(--navy); letter-spacing: .02em; margin: 16px 0 0; line-height: 1.15; }
+    .wr-th-note { font-size: 14.5px; color: #46506e; line-height: 1.55; margin: 4px 0 0; }
+    .wr-th-progtitle { font-family: var(--font-label); font-size: 15px; letter-spacing: .22em; color: #8a6d1f; margin: 22px 0 10px; }
+    .wr-th-item { display: block; width: 100%; text-align: left; appearance: none; cursor: pointer; background: #ffffff; border: 1.5px solid rgba(27,42,107,.18); border-radius: 12px; padding: 13px 16px; margin: 0 0 10px; min-height: 48px; }
+    .wr-th-item.active { border-color: #b08d2e; background: #fdf6dd; }
+    .wr-th-item-t { display: block; font-size: 16.5px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+    .wr-th-item-n { display: block; font-size: 13.5px; color: #46506e; line-height: 1.45; margin-top: 2px; }
+    .wr-th-empty { font-size: 15.5px; color: #46506e; line-height: 1.6; margin: 6px 0 0; }
+  </style>
+</head>
   <body class="welcome-open">
     <div id="scene" aria-label="3D museum gallery"></div>
 
@@ -946,6 +965,7 @@
               <button class="sm-item" type="button" role="menuitem" data-section="lessie">The Lessie Crosland Room <span class="sm-here" aria-hidden="true"></span></button>
               <button class="sm-item" type="button" role="menuitem" data-section="syntaktes">Syntaktes Hall <span class="sm-here" aria-hidden="true"></span></button>
               <button class="sm-item" type="button" role="menuitem" data-section="aurora">From the Aurora <span class="sm-here" aria-hidden="true"></span></button>
+              <button class="sm-item" type="button" role="menuitem" data-section="theatre">The Theatre <span class="sm-here" aria-hidden="true"></span></button>
               <p class="sm-title">Self-guided tours</p>
               <button class="sm-tour" type="button" role="menuitem" data-tour="founders">Founders Day Through the Years</button>
               <button class="sm-tour" type="button" role="menuitem" data-tour="norcal">The Northern California Story</button>
@@ -1026,6 +1046,24 @@
         <div class="handle"></div>
       </div>
     </div>
+
+    <section id="wr-theatre" class="wr-sheet" aria-label="The Theatre">
+      <button class="wr-sheet-x" id="wr-theatre-x" type="button" aria-label="Close the theatre">✕</button>
+      <div class="wr-sheet-head">
+        <p class="wr-sheet-t">The Theatre</p>
+        <p class="wr-sheet-s">The region, in motion.</p>
+      </div>
+      <div class="wr-sheet-body">
+        <div class="wr-th-screen" id="wr-th-screen" hidden>
+          <iframe id="wr-th-iframe" title="Theatre screening" src="about:blank" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        </div>
+        <p class="wr-th-now" id="wr-th-now"></p>
+        <p class="wr-th-note" id="wr-th-note"></p>
+        <p class="wr-th-progtitle">The Program</p>
+        <div id="wr-th-list"></div>
+        <p class="wr-th-empty" id="wr-th-empty">Screenings will be listed here.</p>
+      </div>
+    </section>
 
     <aside id="panel" aria-label="Exhibit reader" aria-hidden="true">
       <button id="panelclose" type="button" aria-label="Close reader">✕</button>
@@ -1414,7 +1452,8 @@ document.addEventListener("DOMContentLoaded", async function () {
           { id: "region", name: "Sigma Sigma" },
           { id: "lessie", name: "The Lessie Crosland Room" },
           { id: "syntaktes", name: "Syntaktes Hall" },
-          { id: "aurora", name: "From the Aurora" }
+          { id: "aurora", name: "From the Aurora" },
+          { id: "theatre", name: "The Theatre" }
         ];
         function sectionName(id) {
           for (var si = 0; si < SECTION_DEFS.length; si++) if (SECTION_DEFS[si].id === id) return SECTION_DEFS[si].name;
@@ -1617,6 +1656,24 @@ document.addEventListener("DOMContentLoaded", async function () {
           if (!atGate) PILASTER_XS.push(midX);
         }
         PILASTER_XS.push(SLOTS[SLOTS.length - 1].x + SLOT_STEP / 2);
+        /* ---- The Theatre: a screening room at the east end ----
+           The theatre holds no exhibits, so the exhibit-driven layout
+           above gives it no floor. Its stretch is added here by hand:
+           every slot-derived x shifts west by half the room's length
+           and the hall grows by that same half, which leaves the
+           entrance end of the museum exactly as it was and opens the
+           room's full length at the east end, past the last Aurora
+           page and before the closing wall. Its gateway follows the
+           same rule as every other section threshold: one step past
+           the previous section's last frame. */
+        var THEATRE_LEN = SLOT_STEP * 5;
+        var THEATRE_SHIFT = THEATRE_LEN / 2;
+        SLOTS.forEach(function (sl) { sl.x -= THEATRE_SHIFT; });
+        Object.keys(GATE_X).forEach(function (gk2) { GATE_X[gk2] -= THEATRE_SHIFT; });
+        PILASTER_XS = PILASTER_XS.map(function (px2) { return px2 - THEATRE_SHIFT; });
+        HALL.x += THEATRE_SHIFT;
+        var THEATRE_GATE_X = SLOTS[SLOTS.length - 1].x + SLOT_STEP;
+        GATE_X.theatre = THEATRE_GATE_X;
         var NUM_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
         function numWord(n, cap) {
           var w = NUM_WORDS[n] || String(n);
@@ -2114,7 +2171,8 @@ document.addEventListener("DOMContentLoaded", async function () {
           { key: "region", name: "Sigma Sigma", sub: "The chapter's story · 1939 – 1971", note: "" },
           { key: "lessie", name: "The Lessie Crosland Room", sub: "Her public sorority record · Basileus to Syntaktes", note: "" },
           { key: "syntaktes", name: "Syntaktes Hall", sub: "The women who led the region · 1952 – Present", note: "" },
-          { key: "aurora", name: "From the Aurora", sub: "Pages from the sorority's journal · 1928 – 1966", note: "" }
+          { key: "aurora", name: "From the Aurora", sub: "Pages from the sorority's journal · 1928 – 1966", note: "" },
+          { key: "theatre", name: "The Theatre", sub: "The region, in motion", note: "" }
         ].forEach(function (gw) {
           var gx = GATE_X[gw.key];
           if (typeof gx !== "number") return;
@@ -2199,6 +2257,274 @@ document.addEventListener("DOMContentLoaded", async function () {
           box(4.62, 0.09, 0.07, M.gold, ox, 3.65, HALL.z - 0.14);
           box(4.62, 0.09, 0.07, M.gold, ox, 1.35, HALL.z - 0.14);
         })();
+
+        /* ---- The Theatre: the museum's screening room ----
+           A darker room at the east end of the hall, past the last
+           Aurora page: a big screen on the south wall, poster frames
+           for each screening along the walls, and benches facing the
+           screen. Tapping the screen or a poster opens the program
+           sheet (below) and plays the screening there. The screenings
+           are embedded YouTube players, never files in the museum,
+           and they are not exhibits: no readers, no passport stamp,
+           and no place in the explored counter.
+
+           TO ADD A SCREENING: add one entry to THEATRE_CLIPS, in
+           program order — the posters, the screen's card, and the
+           program all build themselves from this list.
+             id:    the video's YouTube id (the part after watch?v=)
+             title: the title as it should read in the museum
+             note:  one line shown under the title                  */
+        var THEATRE_CLIPS = [
+          { id: "Ml6tkN-sYl4", title: "Dear Founders: Founders Week, 1964", note: "The 1964 Founders Week observance at Morning Star Church in Oakland." }
+        ];
+        var THEATRE_VIEW = null;
+        (function buildTheatre() {
+          if (typeof THEATRE_GATE_X !== "number") return;
+          var thX0 = THEATRE_GATE_X + 0.4;
+          var thX1 = HALL.x - 0.4;
+          var thMidX = (thX0 + thX1) / 2;
+          var thLen = thX1 - thX0;
+
+          /* the room's darker dress: deep-navy panels laid over the
+             hall's walls, ceiling, and floor for this stretch only,
+             with a gold line running along each wall */
+          var thWallMat = new THREE.MeshStandardMaterial({ color: 0x0a1233, roughness: 1 });
+          var thCeilMat = new THREE.MeshStandardMaterial({ color: 0x0c1438, roughness: 1 });
+          box(thLen, HALL.h, 0.06, thWallMat, thMidX, HALL.h / 2, -(HALL.z - 0.05));
+          box(thLen, HALL.h, 0.06, thWallMat, thMidX, HALL.h / 2, HALL.z - 0.05);
+          box(thLen, 0.06, HALL.z * 2, thCeilMat, thMidX, HALL.h - 0.1, 0);
+          box(thLen, 0.02, HALL.z * 2 - 1.4, thWallMat, thMidX, 0.011, 0);
+          [-1, 1].forEach(function (s) {
+            box(thLen, 0.05, 0.05, M.goldDark, thMidX, 3.92, s * (HALL.z - 0.1));
+          });
+          var thGlow = new THREE.PointLight(0xffd9a0, 0.4, 18, 1.6);
+          thGlow.position.set(thMidX, 3.6, 0); scene.add(thGlow);
+
+          /* ---- the room's intro wall, on the north wall just inside
+             the gateway, in the same pattern as the Syntaktes Hall
+             and From the Aurora walls ---- */
+          var thIntroTex = canvasTex(2048, 1024, function (ctx, w, h) {
+            ctx.fillStyle = "#101c48"; ctx.fillRect(0, 0, w, h);
+            ctx.strokeStyle = "#dfb136"; ctx.lineWidth = 10; ctx.strokeRect(34, 34, w - 68, h - 68);
+            ctx.lineWidth = 3; ctx.strokeRect(62, 62, w - 124, h - 124);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#efd27e"; ctx.font = "400 40px " + LABEL;
+            ctx.fillText("T H E  W E S T E R N  R E G I O N", w / 2, 190);
+            ctx.fillStyle = "#f7f0dc"; ctx.font = "500 128px " + HEAD;
+            ctx.fillText("THE THEATRE", w / 2, 330);
+            ctx.fillStyle = "#dfb136"; ctx.fillRect(w / 2 - 190, 392, 380, 5); ctx.fillRect(w / 2 - 190, 404, 380, 2);
+            ctx.fillStyle = "#efd27e"; ctx.font = "italic 46px " + SERIF;
+            ctx.fillText("The region, in motion", w / 2, 486);
+            ctx.fillStyle = "#f7f0dc"; ctx.font = "40px " + SERIF;
+            wrapText(ctx, "Take a seat. On this screen the region moves: celebrations, gatherings, and the moments our sorors captured and shared.", w / 2, 640, w - 420, 54);
+          });
+          var thIntro = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 2.2),
+            new THREE.MeshStandardMaterial({ map: thIntroTex, roughness: 0.9 }));
+          thIntro.position.set(THEATRE_GATE_X + 2.7, 2.5, -(HALL.z - 0.16));
+          scene.add(thIntro);
+          box(4.62, 0.09, 0.07, M.gold, THEATRE_GATE_X + 2.7, 3.65, -(HALL.z - 0.14));
+          box(4.62, 0.09, 0.07, M.gold, THEATRE_GATE_X + 2.7, 1.35, -(HALL.z - 0.14));
+
+          /* ---- the screen, on the south wall: a gold-backed,
+             velvet-matted card that names the room until the first
+             screening is posted, then names what is showing ---- */
+          var scrH = 4.2, scrW = scrH * 16 / 9, scrCY = 2.32, scrX = thMidX;
+          box(scrW + 0.72, scrH + 0.72, 0.09, M.goldDark, scrX, scrCY, HALL.z - 0.13);
+          box(scrW + 0.4, scrH + 0.4, 0.1, M.velvet, scrX, scrCY, HALL.z - 0.12);
+          var thScrCanvas = document.createElement("canvas");
+          thScrCanvas.width = 1600; thScrCanvas.height = 900;
+          var thScrCtx = thScrCanvas.getContext("2d");
+          var thScrTex = new THREE.CanvasTexture(thScrCanvas);
+          thScrTex.colorSpace = THREE.SRGBColorSpace; thScrTex.anisotropy = 8;
+          (function drawTheatreScreen() {
+            var ctx = thScrCtx, w = 1600, h = 900;
+            var grad = ctx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, "#16265e"); grad.addColorStop(1, "#0a1233");
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+            ctx.strokeStyle = "#dfb136"; ctx.lineWidth = 7; ctx.strokeRect(26, 26, w - 52, h - 52);
+            ctx.lineWidth = 2; ctx.strokeRect(48, 48, w - 96, h - 96);
+            ctx.textAlign = "center";
+            if (THEATRE_CLIPS.length) {
+              ctx.fillStyle = "#efd27e"; ctx.font = "400 48px " + LABEL;
+              ctx.fillText("N O W  S H O W I N G", w / 2, 250);
+              ctx.fillStyle = "#f7f0dc"; ctx.font = "500 104px " + HEAD;
+              wrapText(ctx, THEATRE_CLIPS[0].title.toUpperCase(), w / 2, 440, w - 300, 118);
+              ctx.fillStyle = "#b9c6ee"; ctx.font = "italic 44px " + SERIF;
+              ctx.fillText("Tap the screen for the program", w / 2, 760);
+            } else {
+              ctx.fillStyle = "#efd27e"; ctx.font = "400 44px " + LABEL;
+              ctx.fillText("T H E  W E S T E R N  R E G I O N", w / 2, 252);
+              ctx.fillStyle = "#f7f0dc"; ctx.font = "500 150px " + HEAD;
+              ctx.fillText("THE THEATRE", w / 2, 442);
+              ctx.fillStyle = "#dfb136"; ctx.fillRect(w / 2 - 190, 492, 380, 5); ctx.fillRect(w / 2 - 190, 504, 380, 2);
+              ctx.fillStyle = "#efd27e"; ctx.font = "italic 54px " + SERIF;
+              ctx.fillText("The region, in motion", w / 2, 606);
+              ctx.fillStyle = "#b9c6ee"; ctx.font = "italic 38px " + SERIF;
+              ctx.fillText("Tap the screen for the program", w / 2, 726);
+            }
+          })();
+          var thScreen = new THREE.Mesh(new THREE.PlaneGeometry(scrW, scrH),
+            new THREE.MeshStandardMaterial({ map: thScrTex, roughness: 0.6 }));
+          thScreen.position.set(scrX, scrCY, HALL.z - 0.16); thScreen.rotation.y = Math.PI;
+          thScreen.userData.theatre = 0;
+          scene.add(thScreen); pickables.push(thScreen);
+          var thSpot = new THREE.SpotLight(0xffd9a0, 0.9, 12, 0.7, 0.9, 1.2);
+          thSpot.position.set(scrX, 4.3, HALL.z - 2.6);
+          thSpot.target.position.set(scrX, scrCY, HALL.z);
+          scene.add(thSpot); scene.add(thSpot.target);
+
+          /* ---- poster frames for the screenings: the north wall
+             first, then the south wall on either side of the screen.
+             Each poster carries the screening's YouTube thumbnail
+             when it can be fetched, and a printed title card until
+             then, so a frame never hangs empty. ---- */
+          var thAnchors = [];
+          for (var nX = THEATRE_GATE_X + 6.6; nX <= thX1 - 1.4; nX += 2.35) thAnchors.push({ x: nX, wall: -1 });
+          for (var sX1 = thX0 + 1.8; sX1 < scrX - scrW / 2 - 1.7; sX1 += 2.35) thAnchors.push({ x: sX1, wall: 1 });
+          for (var sX2 = scrX + scrW / 2 + 1.7; sX2 <= thX1 - 1.4; sX2 += 2.35) thAnchors.push({ x: sX2, wall: 1 });
+          THEATRE_CLIPS.forEach(function (clip, i) {
+            var a = thAnchors[i % thAnchors.length];
+            var g = new THREE.Group();
+            g.position.set(a.x, 0, a.wall * HALL.z);
+            g.rotation.y = a.wall < 0 ? 0 : Math.PI;
+            scene.add(g);
+            var pW = 1.5, pH = pW * 9 / 16, pCY = 2.15;
+            var pCanvas = document.createElement("canvas");
+            pCanvas.width = 1280; pCanvas.height = 720;
+            var pCtx = pCanvas.getContext("2d");
+            var pTex = new THREE.CanvasTexture(pCanvas);
+            pTex.colorSpace = THREE.SRGBColorSpace; pTex.anisotropy = 8;
+            function drawPoster(img) {
+              var ctx = pCtx, w = 1280, h = 720;
+              ctx.fillStyle = "#101c48"; ctx.fillRect(0, 0, w, h);
+              if (img) {
+                var sc = Math.max(w / img.width, h / img.height);
+                var dw = img.width * sc, dh = img.height * sc;
+                ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+                ctx.fillStyle = "rgba(10,18,51,0.88)"; ctx.fillRect(0, h - 118, w, 118);
+                ctx.fillStyle = "#dfb136"; ctx.fillRect(0, h - 118, w, 4);
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#f7f0dc";
+                var ts = 52;
+                ctx.font = "500 " + ts + "px " + HEAD;
+                while (ctx.measureText(clip.title).width > w - 120 && ts > 26) { ts -= 4; ctx.font = "500 " + ts + "px " + HEAD; }
+                ctx.fillText(clip.title, w / 2, h - 42);
+              } else {
+                ctx.strokeStyle = "#dfb136"; ctx.lineWidth = 6; ctx.strokeRect(30, 30, w - 60, h - 60);
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#efd27e"; ctx.font = "400 40px " + LABEL;
+                ctx.fillText("T H E  T H E A T R E", w / 2, 300);
+                ctx.fillStyle = "#f7f0dc"; ctx.font = "500 64px " + HEAD;
+                wrapText(ctx, clip.title, w / 2, 400, w - 220, 74);
+              }
+              pTex.needsUpdate = true;
+            }
+            drawPoster(null);
+            try {
+              var thImg = new Image();
+              thImg.crossOrigin = "anonymous";
+              thImg.onload = function () { drawPoster(thImg); needsRender = true; };
+              thImg.src = "https://i.ytimg.com/vi/" + clip.id + "/hqdefault.jpg";
+            } catch (e) {}
+            var back = box(pW + 0.3, pH + 0.3, 0.05, M.goldDark, 0, pCY, 0.045, g);
+            back.userData.theatre = i; pickables.push(back);
+            var mat2 = new THREE.Mesh(new THREE.PlaneGeometry(pW + 0.16, pH + 0.16), M.cream);
+            mat2.position.set(0, pCY, 0.075); g.add(mat2);
+            var art = new THREE.Mesh(new THREE.PlaneGeometry(pW, pH),
+              new THREE.MeshStandardMaterial({ map: pTex, roughness: 0.85 }));
+            art.position.set(0, pCY, 0.085); art.userData.theatre = i; g.add(art);
+            pickables.push(art);
+            var rail2 = 0.07;
+            box(pW + 0.3, rail2, 0.08, M.gold, 0, pCY + pH / 2 + 0.115, 0.07, g);
+            box(pW + 0.3, rail2, 0.08, M.gold, 0, pCY - pH / 2 - 0.115, 0.07, g);
+            box(rail2, pH + 0.3, 0.08, M.gold, -pW / 2 - 0.115, pCY, 0.07, g);
+            box(rail2, pH + 0.3, 0.08, M.gold, pW / 2 + 0.115, pCY, 0.07, g);
+          });
+
+          /* ---- benches facing the screen, on the hall's pattern ---- */
+          function thBench(bx, bz) {
+            var g = new THREE.Group();
+            var seat = new THREE.Mesh(new THREE.RoundedBoxGeometry(2.6, 0.12, 0.62, 3, 0.05), M.wood);
+            seat.position.y = 0.46; seat.castShadow = true; g.add(seat);
+            var trim = new THREE.Mesh(new THREE.BoxGeometry(2.64, 0.03, 0.66), M.goldDark);
+            trim.position.y = 0.545; g.add(trim);
+            var cushion = new THREE.Mesh(new THREE.RoundedBoxGeometry(2.5, 0.13, 0.56, 3, 0.05), M.velvet);
+            cushion.position.y = 0.62; cushion.castShadow = true; g.add(cushion);
+            [-1.05, 1.05].forEach(function (lx) {
+              var leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.52, 0.5), M.goldDark);
+              leg.position.set(lx, 0.26, 0); g.add(leg);
+            });
+            g.position.set(bx, 0, bz); scene.add(g);
+            obstacleCircles.push({ x: bx, z: bz, r: 1.05 });
+          }
+          thBench(thMidX - 3.4, 1.3);
+          thBench(thMidX + 3.4, -1.5);
+
+          /* where the Menu's glide lands: mid-room, facing the screen */
+          THEATRE_VIEW = {
+            pos: new THREE.Vector3(thMidX - 1.5, EYE, -1.2),
+            target: new THREE.Vector3(scrX, 2.3, HALL.z)
+          };
+        })();
+
+        /* ---- the program: the player sheet. One embed at a time;
+           closing the sheet clears the player, so a screening never
+           keeps playing behind the museum. ---- */
+        var thSheet = document.getElementById("wr-theatre");
+        var thIframe = document.getElementById("wr-th-iframe");
+        var thScreenWrap = document.getElementById("wr-th-screen");
+        var thNowEl = document.getElementById("wr-th-now");
+        var thNoteEl = document.getElementById("wr-th-note");
+        var thListEl = document.getElementById("wr-th-list");
+        var thEmptyEl = document.getElementById("wr-th-empty");
+        var thCurrent = -1;
+        function renderTheatreProgram() {
+          if (!thListEl) return;
+          thListEl.innerHTML = "";
+          THEATRE_CLIPS.forEach(function (clip, i) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "wr-th-item" + (i === thCurrent ? " active" : "");
+            var t = document.createElement("span");
+            t.className = "wr-th-item-t"; t.textContent = clip.title;
+            b.appendChild(t);
+            if (clip.note) {
+              var n = document.createElement("span");
+              n.className = "wr-th-item-n"; n.textContent = clip.note;
+              b.appendChild(n);
+            }
+            b.addEventListener("click", function () { playTheatreClip(i); });
+            thListEl.appendChild(b);
+          });
+          if (thEmptyEl) thEmptyEl.hidden = THEATRE_CLIPS.length > 0;
+        }
+        function playTheatreClip(i) {
+          var clip = THEATRE_CLIPS[i];
+          if (!clip || !thIframe) return;
+          thCurrent = i;
+          if (thScreenWrap) thScreenWrap.hidden = false;
+          thIframe.src = "https://www.youtube-nocookie.com/embed/" + clip.id + "?rel=0&autoplay=1";
+          if (thNowEl) thNowEl.textContent = clip.title;
+          if (thNoteEl) thNoteEl.textContent = clip.note || "";
+          renderTheatreProgram();
+        }
+        function openTheatrePlayer(startAt) {
+          if (!thSheet) return;
+          var others = document.querySelectorAll(".wr-sheet.open");
+          for (var oi = 0; oi < others.length; oi++) if (others[oi] !== thSheet) others[oi].classList.remove("open");
+          if (THEATRE_CLIPS.length) playTheatreClip(Math.min(Math.max(startAt || 0, 0), THEATRE_CLIPS.length - 1));
+          else renderTheatreProgram();
+          thSheet.classList.add("open");
+          needsRender = true;
+        }
+        function closeTheatrePlayer() {
+          if (thIframe) thIframe.src = "about:blank";
+          thCurrent = -1;
+          if (thSheet) thSheet.classList.remove("open");
+        }
+        var thSheetX = document.getElementById("wr-theatre-x");
+        if (thSheetX) thSheetX.addEventListener("click", closeTheatrePlayer);
+        window.__WR_THEATRE = { open: openTheatrePlayer, close: closeTheatrePlayer, clips: THEATRE_CLIPS };
 
         /* ============ exhibit viewpoints: fit the whole frame ============
            Distance is derived from the frame's real size and the camera's
@@ -2313,6 +2639,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           var hits = raycaster.intersectObjects(pickables, false);
           if (hits.length) {
             if (hits[0].object.userData.quiz) { window.open(QUIZ_URL, "_blank", "noopener"); return; }
+            if (typeof hits[0].object.userData.theatre === "number") { openTheatrePlayer(hits[0].object.userData.theatre); return; }
             focusExhibit(hits[0].object.userData.exhibit, true);
           }
         }
@@ -2434,6 +2761,12 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
         function gotoSection(id) {
           closePanel();
+          if (id === "theatre" && THEATRE_VIEW) {
+            setActiveSection(id);
+            var ta = lookAngles(THEATRE_VIEW.pos, THEATRE_VIEW.target);
+            glideTo(THEATRE_VIEW.pos, ta.yaw, ta.pitch, reduced ? 0.01 : 1.9, null);
+            return;
+          }
           setActiveSection(id);
           focusExhibit(sectionIndices(id)[0], false);
         }
@@ -3597,6 +3930,9 @@ document.addEventListener("DOMContentLoaded", async function () {
           tour.on = true; tour.idx = 0;
           tour.section = activeSection;
           tour.list = sectionIndices(activeSection);
+          /* a section with no exhibits (the theatre) has no tour of
+             its own; the guided tour then runs from the hall */
+          if (!tour.list.length) { tour.section = "hall"; tour.list = sectionIndices("hall"); }
           tourBtn.textContent = "■ Stop the tour"; tourBtn.classList.add("active");
           document.getElementById("welcome").classList.add("hidden");
           document.body.classList.remove("welcome-open");
@@ -3785,7 +4121,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             resolveCollisions();
             // walking through a section gateway switches the timeline,
             // counter, and Menu marker to the section now underfoot
-            var secNow = cam.pos.x < GATE_X.region ? "hall" : (cam.pos.x < GATE_X.lessie ? "region" : (cam.pos.x < GATE_X.syntaktes ? "lessie" : (cam.pos.x < GATE_X.aurora ? "syntaktes" : "aurora")));
+            var secNow = cam.pos.x < GATE_X.region ? "hall" : (cam.pos.x < GATE_X.lessie ? "region" : (cam.pos.x < GATE_X.syntaktes ? "lessie" : (cam.pos.x < GATE_X.aurora ? "syntaktes" : (cam.pos.x < GATE_X.theatre ? "aurora" : "theatre"))));
             if (secNow !== activeSection) setActiveSection(secNow);
             cam.pos.y = EYE;
             applyCam();
@@ -4490,8 +4826,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     ppWalked.hidden = stamps.length !== TOTAL;
     var hunt = loadJson(HUNT_KEY, []);
     if (!Array.isArray(hunt)) hunt = [];
-    var dots = ["hall", "region", "lessie", "syntaktes", "aurora"].map(function (id) { return hunt.indexOf(id) !== -1 ? "●" : "○"; }).join(" ");
-    ppHuntEl.innerHTML = "Scavenger hunt: <b>" + hunt.length + " of 5</b> marks found <span class=\"dots\">" + dots + "</span>";
+    var dots = ["hall", "region", "lessie", "syntaktes", "aurora", "theatre"].map(function (id) { return hunt.indexOf(id) !== -1 ? "●" : "○"; }).join(" ");
+    ppHuntEl.innerHTML = "Scavenger hunt: <b>" + hunt.length + " of 6</b> marks found <span class=\"dots\">" + dots + "</span>";
     var badge = "";
     try { badge = storage.getItem(BADGE_KEY) || ""; } catch (e) {}
     ppBadgeEl.hidden = badge !== "2026";
@@ -4696,9 +5032,10 @@ document.addEventListener("DOMContentLoaded", async function () {
     region: { right: "14px", top: "118px" },
     lessie: { right: "12px", bottom: "176px" },
     syntaktes: { left: "14px", top: "118px" },
-    aurora: { right: "14px", top: "57%" }
+    aurora: { right: "14px", top: "57%" },
+    theatre: { left: "12px", bottom: "176px" }
   };
-  var HUNT_ROOM_NAMES = { hall: "Founders Day hall", region: "Sigma Sigma", lessie: "Lessie Crosland Room", syntaktes: "Syntaktes Hall", aurora: "From the Aurora" };
+  var HUNT_ROOM_NAMES = { hall: "Founders Day hall", region: "Sigma Sigma", lessie: "Lessie Crosland Room", syntaktes: "Syntaktes Hall", aurora: "From the Aurora", theatre: "Theatre" };
   function activeSectionId() {
     var act = document.querySelector(".sm-item[data-section].active");
     return act ? act.getAttribute("data-section") : "hall";
@@ -4726,7 +5063,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (!Array.isArray(hunt)) hunt = [];
     if (hunt.indexOf(id) === -1) {
       hunt.push(id); saveJson(HUNT_KEY, hunt);
-      notice("You found the gold mark in the <b>" + HUNT_ROOM_NAMES[id] + "</b> — <b>" + hunt.length + " of 5</b> in the scavenger hunt. It is counted in your passport.");
+      notice("You found the gold mark in the <b>" + HUNT_ROOM_NAMES[id] + "</b> — <b>" + hunt.length + " of 6</b> in the scavenger hunt. It is counted in your passport.");
     }
     renderPassport();
     refreshHunt();
@@ -5225,10 +5562,10 @@ document.addEventListener("DOMContentLoaded", async function () {
     var GB_KEY = "wr-museum-guestbook-v1";
     var BADGE_KEY = "wr-passport-opening-badge";
     var VISIT_KEY = "wr-museum-visit-v1";
-    var TOTAL_STAMPS = 7, TOTAL_HUNT = 5;
+    var TOTAL_STAMPS = 7, TOTAL_HUNT = 6;
     var MUSEUM_LINK = "https://wrhistorymuseum.github.io/interactive-3d-museum/";
-    var ROOM_NAMES = { hall: "Founders Day Hall", region: "Sigma Sigma", lessie: "The Lessie Crosland Room", syntaktes: "Syntaktes Hall", aurora: "From the Aurora" };
-    var ROOM_ORDER = ["hall", "region", "lessie", "syntaktes", "aurora"];
+    var ROOM_NAMES = { hall: "Founders Day Hall", region: "Sigma Sigma", lessie: "The Lessie Crosland Room", syntaktes: "Syntaktes Hall", aurora: "From the Aurora", theatre: "The Theatre" };
+    var ROOM_ORDER = ["hall", "region", "lessie", "syntaktes", "aurora", "theatre"];
     var MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     var storage = window.localStorage;
 
@@ -9121,7 +9458,7 @@ body.wr7-navon #wr7-nav { display: flex; }
     var hl = el("p", "wr7-bline");
     hl.appendChild(document.createTextNode("Scavenger hunt: "));
     hl.appendChild(el("b", null, String(huntN)));
-    hl.appendChild(document.createTextNode(" of 5 marks found"));
+    hl.appendChild(document.createTextNode(" of 6 marks found"));
     sb.appendChild(hl);
     box.appendChild(sb);
 
