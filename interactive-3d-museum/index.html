@@ -833,7 +833,89 @@
     <div id="loader" role="status">
       <p id="loadmsg">Opening the museum…</p>
       <div id="loadbar"><i></i></div>
+      <p id="loadfun" aria-hidden="true">Polishing the gold frames…</p>
     </div>
+    <style id="wr-loadfun-style">
+      #loader #loadfun {
+        margin: 0; min-height: 3em; max-width: min(520px, 86vw);
+        color: var(--gold); font-size: 15.5px; font-style: italic; letter-spacing: .03em;
+        line-height: 1.5; transition: opacity .38s ease;
+      }
+      #loader #loadfun.wr-fun-out { opacity: 0; }
+      @media (prefers-reduced-motion: reduce) {
+        #loader #loadfun { transition: none; }
+      }
+    </style>
+    <script>
+      /* ============ Funny loading lines ============
+         While the museum downloads and builds, the plain-HTML loader
+         above is all a visitor sees. This tiny script runs at parse
+         time — long before the main scripts — and rotates a light
+         line under the progress bar. It touches nothing else: the
+         main script still owns #loadmsg and the bar, and this stops
+         for good the moment the loader is dismissed (.done), the
+         loader leaves the page, or the WebGL error replaces the
+         loading message. Calm motion (the museum's own setting) or
+         the device's reduced-motion setting means one still line. */
+      (function () {
+        "use strict";
+        var loader = document.getElementById("loader");
+        var fun = document.getElementById("loadfun");
+        if (!loader || !fun) return;
+        var LINES = [
+          "Polishing the gold frames…",
+          "Turning on the lights in every room…",
+          "Hanging a century of sisterhood, one frame at a time…",
+          "Rolling out the royal blue carpet…",
+          "Teaching the pearls to sparkle…",
+          "Rounding up the poodles…",
+          "Unrolling the Western welcome mat…",
+          "Making room on the wall for one more story…",
+          "Straightening the portraits until they sit just right…",
+          "Counting the frames. Twice. Just to be sure…",
+          "Charging up the listening corner…",
+          "Almost there. History this good takes a second…"
+        ];
+        fun.textContent = LINES[0];
+        var calm = false, reduced = false;
+        try { calm = window.localStorage.getItem("wr-calm-motion") === "1"; } catch (e) {}
+        try { reduced = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) {}
+        if (calm || reduced || LINES.length < 2) return;
+        var i = 0, timer = null, fadeTimer = null, stopped = false, obs = null;
+        function stop() {
+          if (stopped) return;
+          stopped = true;
+          if (timer) { window.clearInterval(timer); timer = null; }
+          if (fadeTimer) { window.clearTimeout(fadeTimer); fadeTimer = null; }
+          if (obs) { obs.disconnect(); obs = null; }
+        }
+        function errShown() {
+          var msg = document.getElementById("loadmsg");
+          return !!(msg && msg.textContent.indexOf("could not start WebGL") >= 0);
+        }
+        function dead() {
+          if (!document.body || !document.body.contains(loader)) return true;
+          if (loader.classList.contains("done")) return true;
+          if (errShown()) { fun.style.display = "none"; return true; }
+          return false;
+        }
+        if (window.MutationObserver) {
+          obs = new MutationObserver(function () { if (dead()) stop(); });
+          obs.observe(loader, { attributes: true, attributeFilter: ["class"] });
+        }
+        timer = window.setInterval(function () {
+          if (dead()) { stop(); return; }
+          fun.classList.add("wr-fun-out");
+          fadeTimer = window.setTimeout(function () {
+            fadeTimer = null;
+            if (dead()) { stop(); return; }
+            i = (i + 1) % LINES.length;
+            fun.textContent = LINES[i];
+            fun.classList.remove("wr-fun-out");
+          }, 380);
+        }, 2600);
+      })();
+    </script>
 
     <div id="errbox" role="alert"></div>
     <div id="toast" role="status"></div>
