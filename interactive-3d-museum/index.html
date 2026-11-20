@@ -891,6 +891,51 @@
        walk pad stand down, as they do under the museum's sheets */
     body.wr-viewer-open #wr7-nav, body.wr-viewer-open #pad { display: none !important; }
   </style>
+
+  <style id="wr-webgl-style">
+    /* ---------- WebGL snag: error card + restoring notice ---------- */
+    #wr-gl-error {
+      position: fixed; inset: 0; z-index: 120; display: none;
+      background: var(--navy-deep);
+      align-items: center; justify-content: center; padding: 22px;
+      overflow-y: auto;
+    }
+    #wr-gl-error.show { display: flex; }
+    #wr-gl-error .wr-gl-card {
+      max-width: 520px; width: 100%; text-align: center;
+      border: 4px double var(--gold); border-radius: 14px;
+      padding: 30px 28px 26px; background: rgba(23, 38, 94, .55);
+    }
+    #wr-gl-error h2 {
+      font-family: var(--font-head); font-weight: 500; margin: 0 0 12px;
+      font-size: clamp(24px, 4.4vw, 34px); color: var(--cream);
+      text-transform: uppercase; letter-spacing: .03em; line-height: 1.15;
+    }
+    #wr-gl-error p { margin: 0 0 14px; color: #c3cfee; font-size: 15.5px; line-height: 1.55; }
+    #wr-gl-error ol {
+      margin: 0 auto 20px; padding: 0 0 0 22px; max-width: 430px;
+      text-align: left; color: var(--cream); font-size: 15.5px; line-height: 1.6;
+    }
+    #wr-gl-error ol li { margin: 0 0 8px; }
+    #wr-gl-retry {
+      font: 600 15px var(--font-body); letter-spacing: .06em;
+      background: linear-gradient(180deg, var(--gold-bright), var(--gold) 55%, #c99b27);
+      border: 1px solid #a8861d; color: #231a02; border-radius: 999px;
+      padding: 14px 38px; min-height: 52px; cursor: pointer;
+    }
+    #wr-gl-retry:focus-visible { outline: 3px solid var(--gold-bright); outline-offset: 2px; }
+    #wr-gl-error .wr-gl-thanks { margin: 16px 0 0; font-size: 13.5px; color: #9fb0dd; font-style: italic; }
+    #wr-gl-notice {
+      position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top));
+      transform: translateX(-50%); z-index: 110; display: none;
+      max-width: min(520px, 92vw); text-align: center;
+      background: var(--navy-deep); color: var(--cream);
+      border: 1px solid var(--gold); border-radius: 999px;
+      padding: 10px 18px; font-size: 14px; line-height: 1.45;
+      box-shadow: 0 10px 30px rgba(0,0,0,.45);
+    }
+    #wr-gl-notice.show { display: block; }
+  </style>
 </head>
   <body class="welcome-open">
     <div id="scene" aria-label="3D museum gallery"></div>
@@ -956,7 +1001,9 @@
         }
         function errShown() {
           var msg = document.getElementById("loadmsg");
-          return !!(msg && msg.textContent.indexOf("could not start WebGL") >= 0);
+          if (msg && msg.textContent.indexOf("could not start WebGL") >= 0) return true;
+          var card = document.getElementById("wr-gl-error");
+          return !!(card && card.classList.contains("show"));
         }
         function dead() {
           if (!document.body || !document.body.contains(loader)) return true;
@@ -983,6 +1030,21 @@
     </script>
 
     <div id="errbox" role="alert"></div>
+    <div id="wr-gl-error" role="alert" aria-live="assertive">
+      <div class="wr-gl-card">
+        <h2>We hit a little snag opening the museum</h2>
+        <p>Your browser could not start the museum&rsquo;s pictures just now. This often clears with a fresh start &mdash; please try these steps:</p>
+        <ol>
+          <li>Close any other museum tabs you have open.</li>
+          <li>Quit Chrome completely, then open Chrome again and come back to this page.</li>
+          <li>If you are not using Chrome, try opening this page in Chrome.</li>
+        </ol>
+        <p id="wr-gl-sw" hidden>One more tip: if pages like this one run slowly or look dark, turn on graphics acceleration. In Chrome, open Settings, then System, and switch on &ldquo;Use graphics acceleration when available&rdquo;, then restart Chrome.</p>
+        <button id="wr-gl-retry" type="button">TRY AGAIN</button>
+        <p class="wr-gl-thanks">Thank you for your patience &mdash; our history will be here when you return.</p>
+      </div>
+    </div>
+    <div id="wr-gl-notice" role="status">The museum hit a graphics snag and is restoring itself&hellip;</div>
     <div id="toast" role="status"></div>
 
     <header id="topbar">
@@ -1753,23 +1815,169 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         /* ================= renderer / scene ================= */
         var container = document.getElementById("scene");
-        var renderer;
-        try {
-          renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-        } catch (e) {
-          document.getElementById("loadmsg").textContent = "This device could not start WebGL, so the 3D hall cannot open.";
-          throw e;
+        /* ---- Graphics startup, made forgiving (Nov 19, 2026) ----
+           The museum holds exactly ONE graphics context: this renderer.
+           (Every other canvas on the page is a plain 2D drawing canvas,
+           and the environment-map helper below reuses this renderer.)
+           Browsers cap how many such contexts can live at once across
+           all open tabs, so a visitor who has been testing in many tabs
+           — most often in Chrome, after a long day — can be refused a
+           context that a fresh browser would grant at once. Startup
+           therefore tries a short ladder of safer settings before it
+           gives up, and only then shows the snag card. A context lost
+           mid-visit shows a brief restoring notice and resumes on the
+           browser's restored event instead of freezing. */
+        var __wrGlState = window.__WR_GL_STATE = {
+          attempts: [], succeededOn: 0, failed: false, lost: false, restored: 0,
+          pixelRatio: 0, adaptiveSteps: 0, fpsAvg: 0,
+          softwareRenderer: false, rendererString: "", color: null,
+          renderer: null, scene: null
+        };
+        function wrGlShowError() {
+          __wrGlState.failed = true;
+          try {
+            var loaderEl = document.getElementById("loader");
+            if (loaderEl) loaderEl.style.display = "none";
+            var card = document.getElementById("wr-gl-error");
+            if (card) card.classList.add("show");
+            var retryBtn = document.getElementById("wr-gl-retry");
+            if (retryBtn) retryBtn.onclick = function () { window.location.reload(); };
+          } catch (e) {}
         }
+        function wrGlNotice(show) {
+          try {
+            var n = document.getElementById("wr-gl-notice");
+            if (n) { if (show) n.classList.add("show"); else n.classList.remove("show"); }
+          } catch (e) {}
+        }
+        var WR_GL_LADDER = [
+          { label: "standard", opts: { antialias: true, powerPreference: "high-performance" } },
+          { label: "allow-software", opts: { antialias: true, powerPreference: "high-performance", failIfMajorPerformanceCaveat: false } },
+          { label: "plain", opts: { antialias: false, powerPreference: "default", failIfMajorPerformanceCaveat: false } },
+          { label: "plainest", opts: { antialias: false, powerPreference: "default", failIfMajorPerformanceCaveat: false, stencil: false, alpha: false } }
+        ];
+        var renderer = null, __wrGlLastErr = null;
+        for (var __wrGlTry = 0; __wrGlTry < WR_GL_LADDER.length; __wrGlTry++) {
+          var __wrGlStep = WR_GL_LADDER[__wrGlTry];
+          __wrGlState.attempts.push(__wrGlStep.label);
+          try {
+            var __wrGlCand = new THREE.WebGLRenderer(__wrGlStep.opts);
+            if (!__wrGlCand || !__wrGlCand.domElement) throw new Error("no drawing surface");
+            renderer = __wrGlCand;
+            __wrGlState.succeededOn = __wrGlTry + 1;
+            break;
+          } catch (e) { __wrGlLastErr = e; renderer = null; }
+        }
+        if (!renderer) { wrGlShowError(); throw (__wrGlLastErr || new Error("graphics startup failed")); }
+        try {
+          renderer.domElement.addEventListener("webglcontextlost", function (ev) {
+            if (ev && ev.preventDefault) ev.preventDefault();
+            __wrGlState.lost = true;
+            wrGlNotice(true);
+          }, false);
+          renderer.domElement.addEventListener("webglcontextrestored", function () {
+            __wrGlState.lost = false;
+            __wrGlState.restored += 1;
+            wrGlNotice(false);
+            try { renderer.shadowMap.needsUpdate = true; } catch (e) {}
+            needsRender = true;
+            try { renderer.render(scene, camera); } catch (e) {}
+          }, false);
+        } catch (e) {}
+        /* If the context we got is a software renderer (Chrome's
+           SwiftShader, llvmpipe), that one fact explains a museum that
+           will not start after a long day, runs extremely slowly, and
+           looks dark: every pixel is being drawn by the processor
+           instead of the graphics chip. Detect it once, here, and arm
+           the snag card's acceleration tip for that case. */
+        try {
+          var __wrGlCtx = renderer.getContext ? renderer.getContext() : null;
+          var __wrGlStr = "";
+          if (__wrGlCtx && __wrGlCtx.getParameter) {
+            var __wrDbg = null;
+            try { __wrDbg = __wrGlCtx.getExtension("WEBGL_debug_renderer_info"); } catch (e) {}
+            if (__wrDbg && __wrDbg.UNMASKED_RENDERER_WEBGL) __wrGlStr = String(__wrGlCtx.getParameter(__wrDbg.UNMASKED_RENDERER_WEBGL) || "");
+            if (!__wrGlStr && __wrGlCtx.RENDERER) __wrGlStr = String(__wrGlCtx.getParameter(__wrGlCtx.RENDERER) || "");
+          }
+          __wrGlState.rendererString = __wrGlStr.slice(0, 160);
+          __wrGlState.softwareRenderer = /swiftshader|llvmpipe|softpipe|software/i.test(__wrGlStr);
+          if (__wrGlState.softwareRenderer) {
+            var __wrSwLine = document.getElementById("wr-gl-sw");
+            if (__wrSwLine) __wrSwLine.hidden = false;
+          }
+        } catch (e) {}
+        /* ---- Adaptive resolution (the safety net) ----
+           The starting ratio below is the museum's long-standing cap:
+           never above 1, so a Retina screen never quadruples the fill
+           cost. If rendered frames stay slow — under about 24 a second
+           across a full measurement window, and not inside the
+           cool-down after a previous change — the ratio steps down a
+           notch (floor 0.5). If frames run fast for a good long stretch
+           it steps back up a smaller notch, never above the start. The
+           windows are measured in rendered-frame time, changes are at
+           least several seconds apart, and a step is only a resolution
+           change, so it cannot fight the visitor's movement. */
+        var __wrAd = { ratio: 1, max: 1, min: 0.5, winMs: 0, winFrames: 0, coolMs: 0, upMs: 0 };
+        __wrGlState.adaptive = __wrAd;
+        function wrAdaptiveApply() {
+          try {
+            renderer.setPixelRatio(__wrAd.ratio);
+            __wrGlState.pixelRatio = __wrAd.ratio;
+            if (typeof fitRenderer === "function") fitRenderer();
+            else renderer.setSize(window.innerWidth, window.innerHeight);
+            needsRender = true;
+          } catch (e) {}
+        }
+        function wrAdaptiveFeed(frameMs) {
+          if (!isFinite(frameMs) || frameMs <= 0 || frameMs > 1000) return;
+          if (__wrGlState.lost) return;
+          __wrAd.winMs += frameMs; __wrAd.winFrames += 1; __wrAd.coolMs += frameMs;
+          if (__wrAd.winMs < 2500) return;
+          var winMs = __wrAd.winMs;
+          var fps = __wrAd.winFrames / (winMs / 1000);
+          __wrGlState.fpsAvg = Math.round(fps * 10) / 10;
+          __wrAd.winMs = 0; __wrAd.winFrames = 0;
+          if (fps < 24) {
+            __wrAd.upMs = 0;
+            if (__wrAd.ratio > __wrAd.min && __wrAd.coolMs >= 5000) {
+              __wrAd.ratio = Math.max(__wrAd.min, Math.round((__wrAd.ratio - 0.15) * 100) / 100);
+              __wrAd.coolMs = 0; __wrGlState.adaptiveSteps += 1;
+              wrAdaptiveApply();
+            }
+          } else if (fps > 50) {
+            __wrAd.upMs += winMs;
+            if (__wrAd.ratio < __wrAd.max && __wrAd.upMs >= 10000 && __wrAd.coolMs >= 8000) {
+              __wrAd.ratio = Math.min(__wrAd.max, Math.round((__wrAd.ratio + 0.1) * 100) / 100);
+              __wrAd.coolMs = 0; __wrAd.upMs = 0; __wrGlState.adaptiveSteps += 1;
+              wrAdaptiveApply();
+            }
+          } else { __wrAd.upMs = 0; }
+        }
+        __wrGlState.feedFrame = wrAdaptiveFeed;
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1));
+        __wrAd.ratio = __wrAd.max = __wrGlState.pixelRatio = (renderer.getPixelRatio ? renderer.getPixelRatio() : Math.min(window.devicePixelRatio || 1, 1));
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFShadowMap;
         if ("outputColorSpace" in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.12;
+        /* The colour settings above are applied here, once, after
+           whichever ladder attempt succeeded — the ladder's options
+           carry no colour behaviour, so every attempt yields exactly
+           the same picture: sRGB output, ACES filmic tone mapping,
+           exposure 1.12. The snapshot lets the record prove it, and
+           the context-restore handler touches none of these. */
+        __wrGlState.color = {
+          toneMapping: renderer.toneMapping,
+          exposure: renderer.toneMappingExposure,
+          outputColorSpace: ("outputColorSpace" in renderer) ? renderer.outputColorSpace : null
+        };
+        __wrGlState.renderer = renderer;
         container.appendChild(renderer.domElement);
 
         var scene = new THREE.Scene();
+        __wrGlState.scene = scene;
         scene.background = new THREE.Color(0x111e4d);
         scene.fog = new THREE.Fog(0x111e4d, 26, HALL.x * 2 + 22);
 
@@ -2150,7 +2358,23 @@ document.addEventListener("DOMContentLoaded", async function () {
           back.castShadow = true;
           var mat = new THREE.Mesh(new THREE.PlaneGeometry(artW + 0.26, artH + 0.26), M.cream);
           mat.position.set(0, artCY, 0.075); g.add(mat);
-          var tex = texLoader.load(ex.file); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+          var tex = texLoader.load(ex.file, function (lt) {
+            /* Cap the graphics copy at 1600px on its longest side:
+               the framed picture on the wall cannot show more than
+               that from any viewpoint a visitor can stand at, and an
+               oversized original only costs memory and fill time. */
+            try {
+              var im = lt.image;
+              if (im && im.width && im.height && Math.max(im.width, im.height) > 1600) {
+                var sc = 1600 / Math.max(im.width, im.height);
+                var cv = document.createElement("canvas");
+                cv.width = Math.max(1, Math.round(im.width * sc));
+                cv.height = Math.max(1, Math.round(im.height * sc));
+                cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height);
+                lt.image = cv; lt.needsUpdate = true;
+              }
+            } catch (e) {}
+          }); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
           var art = new THREE.Mesh(new THREE.PlaneGeometry(artW, artH),
             new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 }));
           art.position.set(0, artCY, 0.085); art.userData.exhibit = i; g.add(art);
@@ -3043,6 +3267,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         // a glide runs, or a texture lands. Idle frames are skipped entirely,
         // which keeps low-power and software-rendered devices responsive.
         var needsRender = true;
+        var __wrLastRenderT = 0;
 
         function applyCam() {
           camera.position.copy(cam.pos);
@@ -4623,8 +4848,11 @@ document.addEventListener("DOMContentLoaded", async function () {
             applyCam();
             autoOpenTick(dt);
             if (moving || dragging || needsRender) {
+              var __wrRt = performance.now();
               renderer.render(scene, camera);
               needsRender = false;
+              if (__wrLastRenderT) wrAdaptiveFeed(__wrRt - __wrLastRenderT);
+              __wrLastRenderT = __wrRt;
             }
           } catch (err) {
             errbox.style.display = "block";
