@@ -890,6 +890,33 @@
     /* while the viewing screen is open the bottom nav and the
        walk pad stand down, as they do under the museum's sheets */
     body.wr-viewer-open #wr7-nav, body.wr-viewer-open #pad { display: none !important; }
+    /* the quiz sheet: a story's "Did You Catch It?" quiz opens
+       here, inside the museum — the deep navy, the quiz's name in
+       gold above a gold-bordered frame, and the quiz itself in
+       the frame. No quiz opens a new tab any more: a phone
+       visitor thrown into a new tab has left the museum and
+       lost their place in it. */
+    #wr-quizsheet { position: fixed; inset: 0; z-index: 90; display: none;
+      background: linear-gradient(180deg, #16265e 0%, #0a1233 100%); color: #f7f0dc;
+      font-family: var(--font-body); }
+    #wr-quizsheet.open { display: block; }
+    #wr-quizsheet .wr-sheet-x { width: 48px; height: 48px; top: 12px; right: 12px; z-index: 5; background: #ffffff; color: var(--navy); border: 2px solid #b08d2e; font-size: 20px; box-shadow: 0 2px 10px rgba(10,18,51,.25); }
+    .wr-quizsheet-in { height: 100%; display: flex; flex-direction: column;
+      max-width: 1024px; margin: 0 auto; box-sizing: border-box;
+      padding: 24px 22px calc(32px + env(safe-area-inset-bottom, 0px)); }
+    .wr-quizsheet-t { font-family: var(--font-label); font-size: clamp(27px, 4.6vw, 42px);
+      letter-spacing: .03em; color: #efd27e; text-align: center; line-height: 1.12; margin: 4px 52px 18px; }
+    .wr-quizsheet-frame { border: 3px solid #dfb136; padding: 7px; background: #060a24;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45); flex: 1 1 auto; min-height: 0; display: flex; }
+    .wr-quizsheet-frame iframe { display: block; flex: 1 1 auto; width: 100%; height: 100%;
+      border: 1.5px solid rgba(223, 177, 54, .6); background: #ffffff; box-sizing: border-box; }
+    @media (max-width: 700px) {
+      .wr-quizsheet-in { padding: 20px 14px calc(26px + env(safe-area-inset-bottom, 0px)); }
+      .wr-quizsheet-t { margin: 2px 46px 14px; }
+    }
+    /* while the quiz sheet is open the bottom nav and the walk
+       pad stand down, as they do under the viewing screen */
+    body.wr-quiz-open #wr7-nav, body.wr-quiz-open #pad { display: none !important; }
   </style>
 
   <style id="wr-webgl-style">
@@ -1190,6 +1217,16 @@
       </div>
     </div>
 
+    <div id="wr-quizsheet" role="dialog" aria-label="Did You Catch It? quiz" aria-hidden="true">
+      <button class="wr-sheet-x" id="wr-quizsheet-x" type="button" aria-label="Close the quiz">✕</button>
+      <div class="wr-quizsheet-in">
+        <p class="wr-quizsheet-t">Did You Catch It?</p>
+        <div class="wr-quizsheet-frame">
+          <iframe id="wr-quizsheet-frame" title="Did You Catch It? quiz" src="about:blank"></iframe>
+        </div>
+      </div>
+    </div>
+
     <aside id="panel" aria-label="Exhibit reader" aria-hidden="true">
       <button id="panelclose" type="button" aria-label="Close reader">✕</button>
       <div class="scroll">
@@ -1224,7 +1261,7 @@
         <div class="quizbox" id="p-quizbox">
           <h3>Did you catch it?</h3>
           <p>Three questions on this story, with the answers explained as you go.</p>
-          <a class="quizbtn" id="p-quiz" href="../did-you-catch-it-quiz/" target="_blank" rel="noopener">Take the quiz</a>
+          <a class="quizbtn" id="p-quiz" href="../did-you-catch-it-quiz/">Take the quiz</a>
         </div>
         <div class="related" id="p-related" style="display:none">
           <h3>Related stops</h3>
@@ -3237,6 +3274,44 @@ document.addEventListener("DOMContentLoaded", async function () {
         if (thSheetX) thSheetX.addEventListener("click", closeTheatrePlayer);
         window.__WR_THEATRE = { open: openTheatrePlayer, close: closeTheatrePlayer, menu: openTheatreMenu, clips: THEATRE_CLIPS, room: TH_ROOM, choose: chooseTheatreFilm, tapScreen: tapTheatreScreen, viewer: thViewer, viewerVideo: thViewerVideo, viewerOpen: function () { return !!(thViewer && thViewer.classList.contains("open")); }, viewerCurrent: function () { return thViewerCurrent; }, closeViewer: closeTheatreViewer };
 
+        /* ---- the quiz sheet: "Did You Catch It?" stays inside
+           the museum. Both doors to a quiz — the closing wall's
+           gold sign (see pick()) and the reader's Take the quiz
+           button — open the quiz here, in a framed sheet over
+           whatever the visitor was doing, instead of throwing
+           them into a new tab. Closing the sheet changes nothing
+           underneath it: a reader it opened over stays open as
+           it was, a self-guided tour keeps its stop and its bar,
+           and the camera never moves. ---- */
+        var quizSheet = document.getElementById("wr-quizsheet");
+        var quizFrame = document.getElementById("wr-quizsheet-frame");
+        var quizSheetX = document.getElementById("wr-quizsheet-x");
+        var quizOpen = false;
+        function openQuizSheet(url) {
+          if (!quizSheet || !quizFrame) return;
+          quizFrame.src = url || QUIZ_URL;
+          quizSheet.classList.add("open");
+          quizSheet.setAttribute("aria-hidden", "false");
+          document.body.classList.add("wr-quiz-open");
+          quizOpen = true;
+          needsRender = true;
+        }
+        function closeQuizSheet() {
+          if (!quizSheet) return;
+          quizSheet.classList.remove("open");
+          quizSheet.setAttribute("aria-hidden", "true");
+          document.body.classList.remove("wr-quiz-open");
+          if (quizFrame) quizFrame.src = "about:blank";
+          quizOpen = false;
+          needsRender = true;
+        }
+        /* the closing wall's gold sign, tapped: the very call
+           pick() makes when the sign is hit, named so the sim
+           can knock on the same door a visitor knocks on */
+        function tapQuizSign() { openQuizSheet(QUIZ_URL); }
+        if (quizSheetX) quizSheetX.addEventListener("click", closeQuizSheet);
+        window.__WR_QUIZ = { open: openQuizSheet, close: closeQuizSheet, tap: tapQuizSign, isOpen: function () { return quizOpen; }, sheet: quizSheet, frame: quizFrame };
+
         /* ============ exhibit viewpoints: fit the whole frame ============
            Distance is derived from the frame's real size and the camera's
            vertical AND horizontal field of view, with a 12% margin, so the
@@ -3350,7 +3425,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           raycaster.setFromCamera(ndc, camera);
           var hits = raycaster.intersectObjects(pickables, false);
           if (hits.length) {
-            if (hits[0].object.userData.quiz) { window.open(QUIZ_URL, "_blank", "noopener"); return; }
+            if (hits[0].object.userData.quiz) { tapQuizSign(); return; }
             if (hits[0].object.userData.theatreScreen) { tapTheatreScreen(hits[0].uv); return; }
             if (typeof hits[0].object.userData.theatre === "number") { chooseTheatreFilm(hits[0].object.userData.theatre); return; }
             focusExhibit(hits[0].object.userData.exhibit, true);
@@ -3365,6 +3440,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           // timeline, or step the reader
           var tgt = e.target;
           if (tgt && (tgt.tagName === "INPUT" || tgt.tagName === "TEXTAREA" || tgt.tagName === "SELECT" || tgt.isContentEditable)) return;
+          if (quizOpen) { if (k === "escape") closeQuizSheet(); return; }
           if (document.body.classList.contains("welcome-open")) {
             if (k === "enter") { e.preventDefault(); document.getElementById("btn-enter").click(); }
             return;
@@ -3876,6 +3952,16 @@ document.addEventListener("DOMContentLoaded", async function () {
           if (idxs[np] !== current) focusExhibit(idxs[np], true);
         }
         document.getElementById("panelclose").addEventListener("click", closePanel);
+        /* the reader's Take the quiz button opens this story's
+           quiz in the quiz sheet, over the reader — never a new
+           tab, never a navigation away. The href the panel fill
+           leaves on the button names the story's quiz; the click
+           is intercepted here so following it can never carry
+           the visitor out of the museum. */
+        document.getElementById("p-quiz").addEventListener("click", function (e) {
+          e.preventDefault();
+          openQuizSheet(this.getAttribute("href") || QUIZ_URL);
+        });
         document.getElementById("p-img").addEventListener("click", function () {
           if (current >= 0 && ALL_EXHIBITS[current].source) openArticle(current);
         });
