@@ -1862,10 +1862,13 @@ document.addEventListener("DOMContentLoaded", async function () {
            context that a fresh browser would grant at once. Startup
            therefore tries a short ladder of safer settings before it
            gives up, and only then shows the snag card. A context lost
-           mid-visit shows a brief restoring notice and resumes on the
-           browser's restored event instead of freezing. */
+           mid-visit shows a brief restoring notice; when the browser
+           restores the context, the museum rebuilds itself with one
+           clean reload instead of resuming a scene that may have come
+           back degraded (the restore guard below keeps that to once). */
         var __wrGlState = window.__WR_GL_STATE = {
           attempts: [], succeededOn: 0, failed: false, lost: false, restored: 0,
+          restoreReloads: 0, restoreFallbacks: 0, restoreAction: "",
           pixelRatio: 0, adaptiveSteps: 0, fpsAvg: 0,
           softwareRenderer: false, rendererString: "", color: null,
           renderer: null, scene: null
@@ -1886,6 +1889,52 @@ document.addEventListener("DOMContentLoaded", async function () {
             var n = document.getElementById("wr-gl-notice");
             if (n) { if (show) n.classList.add("show"); else n.classList.remove("show"); }
           } catch (e) {}
+        }
+        /* ---- Graphics restore guard (Nov 20, 2026) ----
+           Field evidence: on a real Mac in Chrome the museum started
+           on its standard settings with the right colours, ran lit on
+           a fresh load, and still showed the hall near-black in a
+           session whose graphics context had been lost and restored
+           once — the resumed scene had come back degraded. So a
+           restore no longer resumes in place: it reloads the page
+           once, and the museum rebuilds from a fresh context with its
+           textures, lights, and materials all new. The notice stays
+           up through the reload; the reload is the restoration it
+           promises. A sessionStorage stamp guards the loop: a restore
+           landing within two minutes of a self-heal reload resumes in
+           place instead of reloading again, and a full minute of
+           running with no context loss clears the stamp, so a later,
+           separate incident can still heal itself once. The stamp is
+           per tab session, so a fresh tab starts with a clean slate. */
+        var WR_GL_GUARD_KEY = "wr-gl-restore-reload";
+        var WR_GL_GUARD_WINDOW_MS = 120000;
+        var WR_GL_HEALTHY_MS = 60000;
+        var __wrGlHealthyTimer = null;
+        function wrGlGuardStamp() {
+          try {
+            var t = parseInt(window.sessionStorage.getItem(WR_GL_GUARD_KEY) || "", 10);
+            return isFinite(t) ? t : 0;
+          } catch (e) { return 0; }
+        }
+        function wrGlGuardMark() {
+          try { window.sessionStorage.setItem(WR_GL_GUARD_KEY, String(Date.now())); } catch (e) {}
+        }
+        function wrGlGuardClear() {
+          try { window.sessionStorage.removeItem(WR_GL_GUARD_KEY); } catch (e) {}
+        }
+        function wrGlArmHealthy() {
+          if (__wrGlHealthyTimer) { clearTimeout(__wrGlHealthyTimer); __wrGlHealthyTimer = null; }
+          __wrGlHealthyTimer = setTimeout(function () {
+            __wrGlHealthyTimer = null;
+            wrGlGuardClear();
+          }, WR_GL_HEALTHY_MS);
+        }
+        function wrGlResumeInPlace() {
+          wrGlNotice(false);
+          try { renderer.shadowMap.needsUpdate = true; } catch (e) {}
+          needsRender = true;
+          try { renderer.render(scene, camera); } catch (e) {}
+          wrGlArmHealthy();
         }
         var WR_GL_LADDER = [
           { label: "standard", opts: { antialias: true, powerPreference: "high-performance" } },
@@ -1910,17 +1959,36 @@ document.addEventListener("DOMContentLoaded", async function () {
           renderer.domElement.addEventListener("webglcontextlost", function (ev) {
             if (ev && ev.preventDefault) ev.preventDefault();
             __wrGlState.lost = true;
+            if (__wrGlHealthyTimer) { clearTimeout(__wrGlHealthyTimer); __wrGlHealthyTimer = null; }
             wrGlNotice(true);
           }, false);
           renderer.domElement.addEventListener("webglcontextrestored", function () {
             __wrGlState.lost = false;
             __wrGlState.restored += 1;
-            wrGlNotice(false);
-            try { renderer.shadowMap.needsUpdate = true; } catch (e) {}
-            needsRender = true;
-            try { renderer.render(scene, camera); } catch (e) {}
+            var __wrStamp = wrGlGuardStamp();
+            if (__wrStamp && (Date.now() - __wrStamp) < WR_GL_GUARD_WINDOW_MS) {
+              /* A self-heal reload already happened moments ago in
+                 this session: do not loop. Resume in place this time. */
+              __wrGlState.restoreFallbacks += 1;
+              __wrGlState.restoreAction = "resume-guarded";
+              wrGlResumeInPlace();
+              return;
+            }
+            /* First restore on a clean slate: stamp the guard, then
+               reload once so the museum rebuilds from a fresh context
+               rather than resuming a possibly degraded scene. The
+               notice stays up while the page reloads. The healthy
+               timer is re-armed in case the reload is refused, and if
+               the reload call itself throws, resume in place rather
+               than sit frozen. */
+            wrGlGuardMark();
+            __wrGlState.restoreReloads += 1;
+            __wrGlState.restoreAction = "reload";
+            wrGlArmHealthy();
+            try { window.location.reload(); } catch (e) { wrGlResumeInPlace(); }
           }, false);
         } catch (e) {}
+        wrGlArmHealthy();
         /* If the context we got is a software renderer (Chrome's
            SwiftShader, llvmpipe), that one fact explains a museum that
            will not start after a long day, runs extremely slowly, and
