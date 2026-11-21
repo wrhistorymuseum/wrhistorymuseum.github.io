@@ -168,10 +168,15 @@
       .sec-rule { width: 92px; margin: 14px auto 0; border-top: 2px solid var(--gold-soft); border-bottom: 1px solid var(--gold-soft); height: 4px; }
 
       /* ================= STOPS ================= */
-      .stops { display: grid; gap: 14px; max-width: 860px; margin: 0 auto; }
-      @media (min-width: 700px) { .stops { grid-template-columns: 1fr 1fr; } .stops .stop:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+      .stops { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: 860px; margin: 0 auto; }
+      /* The stops stay in one column at every width: this grid lives on the
+   passport book's page (the book is max-width 560px), where two columns
+   sized by their contents (seal + name) can never fit. The old rule keyed
+   two columns to the WINDOW width, the grid overflowed the page, and the
+   book clipped the right-hand column mid-word. One column, sized
+   minmax(0, 1fr), always fits the page it is printed on. */
       .stop {
-        display: flex; align-items: center; gap: 18px;
+        display: flex; align-items: center; gap: 18px; min-width: 0;
         text-decoration: none; color: var(--ink);
         background: var(--card); border: 1px solid var(--line); border-top: 3px solid var(--gold-soft);
         border-radius: 10px; padding: 18px 20px;
@@ -192,6 +197,7 @@
         text-align: center;
       }
       .stop .info { flex: 1; min-width: 0; }
+      .stop .name, .stop .sub, .stop .status { overflow-wrap: break-word; }
       .stop .name {
         font-family: var(--font-display); font-weight: 700;
         font-size: clamp(21px, 4.6vw, 25px); line-height: 1.15;
@@ -205,6 +211,13 @@
         margin: 0;
       }
       @media (prefers-color-scheme: dark) { .stop .status { color: var(--gold-bright); } }
+      @media (max-width: 400px) {
+        /* narrow phones: the card's fixed pieces (seal, gaps, padding)
+           shrink a step so the name's column keeps room for whole words */
+        .stop { gap: 14px; padding: 16px; }
+        .stop .seal { width: 76px; height: 76px; }
+        .stop .name { font-size: 19px; }
+      }
       .stop.stamped { background: linear-gradient(180deg, rgba(201, 162, 39, .14), rgba(201, 162, 39, .05)), var(--card); }
       .stop.stamped .seal {
         border: 2px solid var(--gold-deep);
@@ -439,7 +452,7 @@
       .pp-page .track { background: rgba(20, 31, 82, .14); border-color: rgba(169, 133, 29, .5); }
       .pp-page .progressband .saved { color: #5c6577; }
       /* the holder's data fields, as printed in a passport */
-      .pp-data { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; margin: 0 0 24px; }
+      .pp-data { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px 22px; margin: 0 0 24px; }
       .pp-field { border-bottom: 1px solid rgba(169, 133, 29, .55); padding-bottom: 5px; min-width: 0; }
       .pp-field[hidden] { display: none; }
       .pp-label {
