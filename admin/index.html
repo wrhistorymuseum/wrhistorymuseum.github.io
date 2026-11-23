@@ -719,14 +719,39 @@ async function safeSelect(name, orderCol){
     return res.data || [];
   }catch(e){ return []; }
 }
+async function countExact(name, filters){
+  try{
+    var q = sb.from(name).select("*", { count: "exact", head: true });
+    if(filters) q = filters(q);
+    var res = await q;
+    if(res.error) return 0;
+    return res.count || 0;
+  }catch(e){ return 0; }
+}
+async function fetchAll(name, columns){
+  var out = [], from = 0, step = 1000;
+  for(;;){
+    try{
+      var res = await sb.from(name).select(columns).range(from, from + step - 1);
+      if(res.error) break;
+      var rows = res.data || [];
+      out = out.concat(rows);
+      if(rows.length < step) break;
+      from += step;
+    }catch(e){ break; }
+  }
+  return out;
+}
 async function loadHome(){
   $("homeLoading").classList.remove("hidden"); $("homeBody").classList.add("hidden");
-  var usage = await safeSelect("museum_usage");
-  var checkins = await safeSelect("chapter_checkins");
-  var walkers = await safeSelect("passport_walkers");
-  var guestbook = await safeSelect("guestbook");
-  var quizRows = await safeSelect("chapter_quiz");
-  var subs = await safeSelect("museum_submissions");
+  var usage = await fetchAll("museum_usage", "event_type,user_email,session_id,created_at,item,section,chapter");
+  var checkins = await fetchAll("chapter_checkins", "chapter");
+  var walkers = await fetchAll("passport_walkers", "chapter");
+  var nPassports = await countExact("passport_walkers");
+  var nGuest = await countExact("guestbook");
+  var nCheck = await countExact("chapter_checkins");
+  var nQuiz = await countExact("chapter_quiz");
+  var nWait = await countExact("museum_submissions", function(q){ return q.eq("status", "new"); });
   var u = usage.filter(function(r){ return inRange(r.created_at); });
   var starts = u.filter(function(r){ return r.event_type==="session_start"; }).length;
   var visitsFallback = u.filter(function(r){ return r.event_type==="visit"; }).length;
@@ -750,7 +775,7 @@ async function loadHome(){
   } else { $("nAvg").textContent = "–"; }
   $("nStories").textContent = u.filter(function(r){ return r.event_type==="exhibit_view"; }).length;
   $("nRooms").textContent = u.filter(function(r){ return r.event_type==="room_view"; }).length;
-  $("nWaiting").textContent = subs.filter(function(r){ return r.status==="new"; }).length;
+  $("nWaiting").textContent = nWait;
   function topList(el, counts, emptyText){
     var pairs = Object.keys(counts).map(function(k){ return [k, counts[k]]; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0,10);
     if(!pairs.length){ el.innerHTML = '<p class="hint">'+esc(emptyText)+'</p>'; return; }
@@ -769,10 +794,10 @@ async function loadHome(){
   walkers.forEach(function(r){ if(r.chapter) chapters[r.chapter]=1; });
   var chNames = Object.keys(chapters).sort();
   $("chapterList").innerHTML = chNames.length ? chNames.map(function(c){ return '<span class="chip draft" style="margin:0 .35rem .35rem 0;font-size:.9rem;padding:.35rem .8rem">'+esc(c)+'</span>'; }).join("") : '<p class="hint">No chapters yet.</p>';
-  $("cPassports").textContent = walkers.length;
-  $("cGuestbook").textContent = guestbook.length;
-  $("cCheckins").textContent = checkins.length;
-  $("cQuizPlays").textContent = quizRows.length;
+  $("cPassports").textContent = nPassports;
+  $("cGuestbook").textContent = nGuest;
+  $("cCheckins").textContent = nCheck;
+  $("cQuizPlays").textContent = nQuiz;
   $("homeLoading").classList.add("hidden"); $("homeBody").classList.remove("hidden");
 }
 
