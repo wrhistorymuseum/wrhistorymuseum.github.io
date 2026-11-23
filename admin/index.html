@@ -167,6 +167,7 @@ audio{width:100%;margin:.4rem 0}
     <!-- ===== (a) HOME / NUMBERS ===== -->
     <section id="screen-home" class="screen">
       <p class="instruction">See how the museum is doing. Pick a stretch of days, and the numbers below follow it.</p>
+      <p class="hint" id="homeUpdated"></p>
       <div class="seg" id="rangeSeg">
         <button data-days="7" type="button">Last 7 days</button>
         <button data-days="30" class="active" type="button">Last 30 days</button>
@@ -742,6 +743,18 @@ async function fetchAll(name, columns){
   }
   return out;
 }
+var homeAutoTimer = null;
+function stopHomeAuto(){
+  if(homeAutoTimer){ clearInterval(homeAutoTimer); homeAutoTimer = null; }
+}
+function startHomeAuto(){
+  if(homeAutoTimer) return;
+  homeAutoTimer = setInterval(function(){
+    var s = $("screen-home");
+    if(!s || s.classList.contains("hidden")){ stopHomeAuto(); return; }
+    loadHome();
+  }, 60000);
+}
 async function loadHome(){
   $("homeLoading").classList.remove("hidden"); $("homeBody").classList.add("hidden");
   var usage = await fetchAll("museum_usage", "event_type,user_email,session_id,created_at,item,section,chapter");
@@ -799,6 +812,9 @@ async function loadHome(){
   $("cCheckins").textContent = nCheck;
   $("cQuizPlays").textContent = nQuiz;
   $("homeLoading").classList.add("hidden"); $("homeBody").classList.remove("hidden");
+  var hu = $("homeUpdated");
+  if(hu) hu.textContent = "Updated " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) + " — while this screen stays open, the numbers check again every minute on their own.";
+  startHomeAuto();
 }
 
 /* ---------------- (b) Stories & Rooms ---------------- */
