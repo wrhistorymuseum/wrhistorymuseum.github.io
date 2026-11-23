@@ -3517,7 +3517,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         /* keyboard */
         window.addEventListener("keydown", function (e) {
-          var k = e.key.toLowerCase();
+          var k = (e.key || "").toLowerCase();
           // typing in the Menu search box is typing, not walking: letters,
           // digits, and arrows there must never move the camera, jump the
           // timeline, or step the reader
@@ -3539,7 +3539,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].indexOf(k) >= 0) e.preventDefault();
           if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].indexOf(k) >= 0) cancelGlide();
         });
-        window.addEventListener("keyup", function (e) { keys[e.key.toLowerCase()] = false; });
+        window.addEventListener("keyup", function (e) { keys[(e.key || "").toLowerCase()] = false; });
 
         /* on-screen pad (hold to walk) */
         function bindPad(id, name) {
@@ -3727,7 +3727,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           SEARCH_INDEX.forEach(function (entry) {
             var score = 0, ok = true;
             tokens.forEach(function (tok) {
-              if (entry.headline.toLowerCase().indexOf(tok) >= 0) { /* headline match ranks first */ }
+              if ((entry.headline || "").toLowerCase().indexOf(tok) >= 0) { /* headline match ranks first */ }
               else if (entry.primary.indexOf(tok) >= 0) score += 1;
               else if (entry.text.indexOf(tok) >= 0) score += 2;
               else ok = false;
@@ -6442,7 +6442,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       "<p class=\"wr-pp-reg-line\">Sign in with your email to get your sign-in link. That is how your stamps and progress follow you, and how you find them again when you come back.</p>" +
       "<form class=\"wr-pp-reg-form\" id=\"wr-pp-reg-signin\">" +
       "<label for=\"wr-pp-reg-email\">Email address</label>" +
-      "<input id=\"wr-pp-reg-email\" type=\"email\" autocomplete=\"email\" placeholder=\"Email address\" />" +
+      "<input id=\"wr-pp-reg-email\" type=\"email\" autocomplete=\"email\" autocapitalize=\"none\" autocorrect=\"off\" spellcheck=\"false\" placeholder=\"Email address\" />" +
       "<button class=\"wr-pp-reg-btn\" id=\"wr-pp-reg-send\" type=\"submit\">Email me a sign-in link</button>" +
       "<p class=\"wr-pp-reg-msg\" id=\"wr-pp-reg-signin-msg\" role=\"status\"></p>" +
       "</form>" +
@@ -6485,7 +6485,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     ppRegHolderMsg = ppSheet.querySelector("#wr-pp-reg-holder-msg");
     ppSheet.querySelector("#wr-pp-reg-signin").addEventListener("submit", function (ev) {
       ev.preventDefault();
-      var email = ppRegEmail.value.trim();
+      var email = ppRegEmail.value.trim().toLowerCase();
       if (!email) return;
       if (!sb || !sb.auth) { regMsg(ppRegSigninMsg, "That sign-in link could not be sent. Check the email address and try again."); return; }
       ppRegSendBtn.disabled = true;
@@ -10270,6 +10270,7 @@ body.wr7-navon #wr7-nav { display: flex; }
     inp.className = "wr-pp-reg-in"; inp.id = inputId; inp.type = type || "text";
     if (ph) inp.placeholder = ph;
     inp.setAttribute("autocomplete", "off");
+    if ((type || "") === "email") { inp.setAttribute("autocapitalize", "none"); inp.setAttribute("autocorrect", "off"); inp.setAttribute("spellcheck", "false"); inp.setAttribute("autocomplete", "email"); }
     wrap.appendChild(inp);
     return wrap;
   }
@@ -10481,7 +10482,7 @@ body.wr7-navon #wr7-nav { display: flex; }
 
   /* ---------- sign-in link (shared by gate + profile) ---------- */
   function sendSignInLink(emailId, msgId, btn) {
-    var em = ($(emailId) ? $(emailId).value : "").trim();
+    var em = ($(emailId) ? $(emailId).value : "").trim().toLowerCase();
     var msg = $(msgId);
     function say(t) { if (msg) msg.textContent = t; }
     if (!em || em.indexOf("@") < 0) { say("Add your email address first."); return; }
