@@ -169,6 +169,7 @@ audio{width:100%;margin:.4rem 0}
       <p class="instruction">See how the museum is doing. Pick a stretch of days, and the numbers below follow it.</p>
       <p class="hint" id="homeUpdated"></p>
       <div class="seg" id="rangeSeg">
+        <button data-days="-1" type="button">Today</button>
         <button data-days="7" type="button">Last 7 days</button>
         <button data-days="30" class="active" type="button">Last 30 days</button>
         <button data-days="90" type="button">Last 90 days</button>
@@ -189,6 +190,11 @@ audio{width:100%;margin:.4rem 0}
           <p><span class="bebas" style="font-size:2rem" id="nWaiting">–</span> &nbsp;pieces sent in by visitors are waiting on the Submissions screen.</p>
           <button class="btn gold" type="button" data-goto="submissions">Go to Submissions</button>
         </div>
+      <div class="card">
+        <h3>Day by day</h3>
+        <p class="hint">The last seven days, newest first.</p>
+        <div id="byDayList"><p class="hint">Nothing yet.</p></div>
+      </div>
         <div class="card">
           <h3>Most-opened stories</h3>
           <div id="topStories"><p class="hint">Nothing yet.</p></div>
@@ -707,8 +713,12 @@ $("rangeSeg").addEventListener("click", function(ev){
   loadHome();
 });
 function inRange(v){
-  if(!rangeDays) return true;
   var d = new Date(v); if(isNaN(d)) return false;
+  if(rangeDays === -1){
+    var n = new Date();
+    return d.getFullYear()===n.getFullYear() && d.getMonth()===n.getMonth() && d.getDate()===n.getDate();
+  }
+  if(!rangeDays) return true;
   return d.getTime() >= Date.now() - rangeDays*86400000;
 }
 async function safeSelect(name, orderCol){
@@ -758,7 +768,8 @@ function startHomeAuto(){
 async function loadHome(){
   $("homeLoading").classList.remove("hidden"); $("homeBody").classList.add("hidden");
   var usage = await fetchAll("museum_usage", "event_type,user_email,session_id,created_at,item,section,chapter");
-  var checkins = await fetchAll("chapter_checkins", "chapter");
+  var checkins = await fetchAll("chapter_checkins", "chapter,created_at");
+  var guestRows = await fetchAll("guestbook", "created_at");
   var walkers = await fetchAll("passport_walkers", "chapter");
   var nPassports = await countExact("passport_walkers");
   var nGuest = await countExact("guestbook");
@@ -812,6 +823,32 @@ async function loadHome(){
   $("cCheckins").textContent = nCheck;
   $("cQuizPlays").textContent = nQuiz;
   $("homeLoading").classList.add("hidden"); $("homeBody").classList.remove("hidden");
+  var dayMs = 86400000;
+  function dayKey(t){ var d = new Date(t); if(isNaN(d)) return null; return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate(); }
+  var todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  var days = [];
+  for(var di = 0; di < 7; di++){
+    var ds = new Date(todayStart.getTime() - di*dayMs);
+    days.push({ key: dayKey(ds), date: ds, starts: 0, visitsOld: 0, signinEmails: {}, stories: 0, guest: 0, checkins: 0 });
+  }
+  var byKey = {}; days.forEach(function(d){ byKey[d.key] = d; });
+  usage.forEach(function(r){
+    var d = byKey[dayKey(r.created_at)]; if(!d) return;
+    if(r.event_type === "session_start") d.starts++;
+    if(r.event_type === "visit") d.visitsOld++;
+    if(r.event_type === "sign_in" && r.user_email) d.signinEmails[r.user_email] = 1;
+    if(r.event_type === "exhibit_view") d.stories++;
+  });
+  guestRows.forEach(function(r){ var d = byKey[dayKey(r.created_at)]; if(d) d.guest++; });
+  checkins.forEach(function(r){ var d = byKey[dayKey(r.created_at)]; if(d) d.checkins++; });
+  var dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  var monNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  $("byDayList").innerHTML = days.map(function(d, idx){
+    var label = (idx === 0 ? "Today, " : idx === 1 ? "Yesterday, " : "") + dayNames[d.date.getDay()] + " " + monNames[d.date.getMonth()] + " " + d.date.getDate();
+    var visits = d.starts || d.visitsOld;
+    var signins = Object.keys(d.signinEmails).length;
+    return '<div class="listitem"><div class="t">' + label + '</div><div class="hint">' + visits + ' visits \u00b7 ' + signins + ' signed in \u00b7 ' + d.stories + ' stories opened \u00b7 ' + d.guest + ' guest book \u00b7 ' + d.checkins + ' check-ins</div></div>';
+  }).join("");
   var hu = $("homeUpdated");
   if(hu) hu.textContent = "Updated " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) + " — while this screen stays open, the numbers check again every minute on their own.";
   startHomeAuto();
